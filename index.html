@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ============================
+       修改你的名字请搜索 "YOUR_NAME"
+       修改邮箱请搜索 "YOUR_EMAIL"
+       ============================ -->
+  <title>Cohen — Portfolio</title>
+  <script src="lib/tailwindcss.js"></script>
+  <style>
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('lib/JetBrainsMono.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('lib/JetBrainsMono-Bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --muted: #666;
+      --accent: #64ffda;
+      --accent-dim: rgba(100, 255, 218, 0.08);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(13, 13, 13, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s;
+    }
+    nav.scrolled { border-bottom-color: var(--border); }
+
+    .nav-logo {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ─── Sections ─── */
+    section {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 100px 24px;
+    }
+
+    /* ─── Hero ─── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 120px;
+    }
+
+    .hero-greeting {
+      color: var(--accent);
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      margin-bottom: 16px;
+    }
+
+    .hero-name {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 3vw, 1.4rem);
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 40px;
+      max-width: 520px;
+    }
+
+    .hero-email {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid var(--accent);
+      padding: 12px 24px;
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+    .hero-email:hover { background: var(--accent-dim); }
+
+    /* ─── Section label ─── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      max-width: 200px;
+    }
+
+    /* ─── About ─── */
+    .about-text {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.9;
+      max-width: 600px;
+    }
+    .about-text strong { color: var(--text); }
+
+    /* ─── Projects ─── */
+    .projects-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px 32px;
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--accent);
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition: transform 0.25s ease;
+    }
+    .project-card:hover {
+      border-color: rgba(100, 255, 218, 0.3);
+      transform: translateY(-2px);
+    }
+    .project-card:hover::before { transform: scaleY(1); }
+
+    .project-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .project-name {
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .project-arrow {
+      color: var(--muted);
+      font-size: 18px;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .project-card:hover .project-arrow {
+      color: var(--accent);
+      transform: translate(3px, -3px);
+    }
+
+    .project-desc {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 3px 10px;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+    }
+
+    /* placeholder card */
+    .project-card.placeholder {
+      border-style: dashed;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* ─── Social ─── */
+    .social-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .social-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .social-item:hover {
+      border-color: rgba(100, 255, 218, 0.3);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .social-item-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .social-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--border);
+      border-radius: 4px;
+      font-size: 15px;
+    }
+    .social-name { font-size: 14px; font-weight: 700; }
+    .social-handle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .social-arrow { color: var(--muted); font-size: 16px; }
+
+    /* ─── Contact ─── */
+    #contact {
+      text-align: center;
+    }
+    .contact-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .contact-desc {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 36px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ─── Status badge ─── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.08);
+      padding: 3px 10px;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      flex-shrink: 0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(74,222,128,0); }
+    }
+
+    /* ─── GitHub button (inside project card) ─── */
+    .github-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 2px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .github-btn:hover {
+      border-color: rgba(100, 255, 218, 0.4);
+      background: var(--accent-dim);
+    }
+
+    /* ─── Fade-in animation ─── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .nav-links { gap: 20px; }
+      section { padding: 80px 20px; }
+    }
+    @media (max-width: 480px) {
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════
+       NAV
+  ══════════════════════════════════ -->
+  <nav id="navbar">
+    <a href="#hero" class="nav-logo">cohen<span style="color:#fff">.</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">about</a></li>
+      <li><a href="#projects">projects</a></li>
+      <li><a href="#social">social</a></li>
+      <li><a href="#contact">contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ══════════════════════════════════
+       HERO
+  ══════════════════════════════════ -->
+  <section id="hero">
+    <p class="hero-greeting">// hello, world</p>
+    <!-- ★ 修改你的名字 -->
+    <h1 class="hero-name">Hi, I'm Cohen.</h1>
+    <!-- ★ 修改你的一句话介绍 -->
+    <p class="hero-tagline">Developer & creator. Building things that live on the internet.</p>
+    <!-- ★ 邮箱 YOUR_EMAIL -->
+    <a href="mailto:q63725959@gmail.com" class="hero-email">
+      <span>&#9993;</span>
+      q63725959@gmail.com
+    </a>
+  </section>
+
+  <!-- ══════════════════════════════════
+       ABOUT
+  ══════════════════════════════════ -->
+  <section id="about">
+    <div class="section-label">About</div>
+    <!-- ★ 修改 about 内容 -->
+    <p class="about-text fade-in">
+      欢迎来到我的个人主页。我对技术和创造充满热情，喜欢把想法变成现实。<br><br>
+      目前专注于 <strong>软件开发</strong> 与 <strong>个人项目</strong>，持续探索新的工具与可能性。<br><br>
+      有任何想法或合作意向，欢迎通过邮件联系我。
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════
+       PROJECTS
+       ★ 添加项目：复制一个 project-card 块，
+         填入 href、项目名、描述和 tags 即可。
+         添加完成后删除下方 "placeholder" 卡片。
+  ══════════════════════════════════ -->
+  <section id="projects">
+    <div class="section-label">Projects</div>
+    <div class="projects-grid">
+
+      <!-- ── 项目卡片模板（复制此块添加项目）──
+      <a href="YOUR_PROJECT_URL" target="_blank" class="project-card fade-in">
+        <div class="project-card-header">
+          <span class="project-name">项目名称</span>
+          <span class="project-arrow">↗</span>
+        </div>
+        <p class="project-desc">项目简介，一两句话描述这个项目是什么。</p>
+        <div class="project-tags">
+          <span class="tag">Tag1</span>
+          <span class="tag">Tag2</span>
+        </div>
+      </a>
+      ── 模板结束 ── -->
+
+      <!-- Sync Station -->
+      <a href="https://github.com/Cohenjikan/sync-station" target="_blank" class="project-card fade-in">
+        <div class="project-card-header">
+          <span class="project-name">Sync Station</span>
+          <span class="project-arrow">↗</span>
+        </div>
+        <p class="project-desc">私有跨设备同步工具，支持文本与文件的实时共享，基于 WebSocket 实现即时更新，提供双视图布局与 PIN 锁保护。</p>
+        <div class="project-tags">
+          <span class="tag">JavaScript</span>
+          <span class="tag">WebSocket</span>
+          <span class="tag">HTML</span>
+          <span class="tag">Open Source</span>
+        </div>
+      </a>
+
+      <!-- PrimerScore Web -->
+      <div class="project-card fade-in">
+        <div class="project-card-header">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="project-name">PrimerScore Web</span>
+            <span class="status-badge">
+              <span class="status-dot"></span>
+              In Progress / 进行中
+            </span>
+          </div>
+        </div>
+        <p class="project-desc">PCR 引物设计工具的网页化实现，支持 BLAST 校验与表达感知评分，提升了生信工具的交互体验与可访问性。</p>
+        <div class="project-tags">
+          <span class="tag">Python</span>
+          <span class="tag">Bioinformatics</span>
+          <span class="tag">BLAST</span>
+          <span class="tag">Web</span>
+        </div>
+        <div style="margin-top:20px;">
+          <a href="https://github.com/TH-Chen-CN/PrimerScore" target="_blank" class="github-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            View on GitHub ↗
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SOCIAL
+       ★ 添加社交：复制一个 social-item 块，
+         填入 href、图标、名称和 handle。
+         添加完成后删除下方注释示例。
+  ══════════════════════════════════ -->
+  <section id="social">
+    <div class="section-label">Social</div>
+    <div class="social-list">
+
+      <!-- ── 社交链接模板（复制此块添加账号）──
+      <a href="YOUR_URL" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">G</div>
+          <div>
+            <div class="social-name">GitHub</div>
+            <div class="social-handle">@your-handle</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+      ── 模板结束 ── -->
+
+      <!-- Email（已填写） -->
+      <a href="mailto:q63725959@gmail.com" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">@</div>
+          <div>
+            <div class="social-name">Email</div>
+            <div class="social-handle">q63725959@gmail.com</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <!-- GitHub -->
+      <a href="https://github.com/Cohenjikan" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          </div>
+          <div>
+            <div class="social-name">GitHub</div>
+            <div class="social-handle">@Cohenjikan</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <!-- Instagram -->
+      <a href="https://www.instagram.com/mk.cohen.3/" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </div>
+          <div>
+            <div class="social-name">Instagram</div>
+            <div class="social-handle">@mk.cohen.3</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <!-- ★ 在此处添加 Twitter、LinkedIn 等 -->
+      <!-- 示例（取消注释并填入你的链接）:
+
+      <a href="https://github.com/YOUR_HANDLE" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">G</div>
+          <div>
+            <div class="social-name">GitHub</div>
+            <div class="social-handle">@YOUR_HANDLE</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <a href="https://twitter.com/YOUR_HANDLE" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">X</div>
+          <div>
+            <div class="social-name">Twitter / X</div>
+            <div class="social-handle">@YOUR_HANDLE</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <a href="https://linkedin.com/in/YOUR_HANDLE" target="_blank" class="social-item fade-in">
+        <div class="social-item-left">
+          <div class="social-icon">in</div>
+          <div>
+            <div class="social-name">LinkedIn</div>
+            <div class="social-handle">YOUR_HANDLE</div>
+          </div>
+        </div>
+        <span class="social-arrow">↗</span>
+      </a>
+      -->
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       CONTACT
+  ══════════════════════════════════ -->
+  <section id="contact">
+    <div class="section-label" style="justify-content:center;">
+      <span>Contact</span>
+    </div>
+    <h2 class="contact-title fade-in">Let's talk.</h2>
+    <p class="contact-desc fade-in">有项目想法、合作意向或只是想打个招呼，随时欢迎。</p>
+    <a href="mailto:q63725959@gmail.com" class="hero-email fade-in">
+      <span>&#9993;</span>
+      Send me an email
+    </a>
+  </section>
+
+  <!-- ══════════════════════════════════
+       FOOTER
+  ══════════════════════════════════ -->
+  <footer>
+    <span id="footer-year"></span> Cohen &mdash; Built with ♥ locally
+  </footer>
+
+  <script src="lib/luxon.min.js"></script>
+  <script>
+    // ── Year ──
+    document.getElementById('footer-year').textContent =
+      '© ' + luxon.DateTime.now().year;
+
+    // ── Nav scroll border ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // ── Fade-in on scroll ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
