@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cohen — Portfolio</title>
+  <link rel="stylesheet" href="lib/fonts.css">
+  <script src="lib/tailwindcss.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #050505;
+      --surface: #111111;
+      --border: #222222;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #64ffda;
+      --accent-dim: rgba(100, 255, 218, 0.08);
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg);
+    }
+
+    body {
+      background-color: transparent;
+      color: var(--text);
+      font-family: 'JetBrains Mono', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(circle at center, #0a0a0a 0%, #000000 100%);
+      filter: blur(1.5px);
+      transform: scale(1.05);
+    }
+
+    .magnetic-wrap {
+      display: inline-block;
+      position: relative;
+    }
+
+    .magnetic-inner {
+      display: inline-block;
+      transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      will-change: transform;
+    }
+
+    .magnetic-wrap:hover .magnetic-inner {
+      transition: transform 0.1s ease-out;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 48px;
+      background: rgba(5, 5, 5, 0.5);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.4s ease, padding 0.4s ease;
+    }
+
+    nav.scrolled {
+      border-bottom-color: rgba(255, 255, 255, 0.05);
+      padding: 16px 48px;
+    }
+
+    .nav-logo {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      position: relative;
+    }
+
+    .nav-logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      transition: color 0.3s ease;
+      display: block;
+      padding: 10px;
+      margin: -10px;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .lang-toggle {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .lang-toggle:hover {
+      color: var(--accent);
+      border-color: rgba(100, 255, 218, 0.4);
+      background: rgba(100, 255, 218, 0.05);
+    }
+
+    section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 120px 24px;
+      position: relative;
+    }
+
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 0;
+    }
+
+    .hero-content-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-greeting {
+      color: var(--accent);
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .hero-name {
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fff 0%, var(--accent) 50%, #fff 100%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shine 4s linear infinite, float 6s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+
+      100% {
+        transform: translateY(0px);
+      }
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 50px;
+      max-width: 540px;
+      line-height: 1.6;
+    }
+
+    .hero-email {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--bg);
+      background: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 4px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 0 20px rgba(100, 255, 218, 0.2);
+    }
+
+    .hero-email:hover {
+      box-shadow: 0 0 30px rgba(100, 255, 218, 0.4);
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 60px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .section-label span {
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 14px;
+      margin-right: 10px;
+      font-weight: 400;
+    }
+
+    .about-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 2;
+      max-width: 650px;
+    }
+
+    .about-text strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .projects-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .project-card {
+      background: rgba(17, 17, 17, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 32px;
+      text-decoration: none;
+      display: block;
+      transition: border-color 0.4s ease, background 0.4s ease;
+      position: relative;
+    }
+
+    .project-card:hover {
+      border-color: rgba(100, 255, 218, 0.4);
+      background: rgba(17, 17, 17, 0.9);
+    }
+
+    .project-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .project-name {
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .project-arrow {
+      color: var(--muted);
+      font-size: 20px;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .project-card:hover .project-arrow {
+      color: var(--accent);
+      transform: translate(4px, -4px);
+    }
+
+    .project-desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tag {
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(100, 255, 218, 0.05);
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(100, 255, 218, 0.1);
+    }
+
+    .social-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .social-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      background: rgba(17, 17, 17, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.4s ease;
+    }
+
+    .social-item:hover {
+      border-color: rgba(100, 255, 218, 0.4);
+    }
+
+    .social-item-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .social-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      color: var(--accent);
+      transition: transform 0.3s ease;
+    }
+
+    .social-item:hover .social-icon {
+      transform: scale(1.1);
+    }
+
+    .social-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .social-handle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .social-arrow {
+      color: var(--muted);
+      font-size: 18px;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .social-item:hover .social-arrow {
+      color: var(--accent);
+      transform: translate(4px, -4px);
+    }
+
+    #contact {
+      text-align: center;
+      padding: 160px 24px;
+    }
+
+    .contact-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .contact-desc {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 48px;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.8;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: #000;
+    }
+
+    .github-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px 20px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .github-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(100, 255, 218, 0.05);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        padding: 16px 24px;
+      }
+
+      nav.scrolled {
+        padding: 16px 24px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      section {
+        padding: 80px 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="canvas-container">
+    <canvas id="fluid-canvas"></canvas>
+  </div>
+
+  <nav id="navbar">
+    <div class="magnetic-wrap">
+      <a href="#hero" class="nav-logo magnetic-inner">cohen<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li class="magnetic-wrap"><a href="#about" class="magnetic-inner" data-i18n="nav-about">about</a></li>
+      <li class="magnetic-wrap"><a href="#projects" class="magnetic-inner" data-i18n="nav-projects">projects</a></li>
+      <li class="magnetic-wrap"><a href="#social" class="magnetic-inner" data-i18n="nav-social">social</a></li>
+      <li class="magnetic-wrap"><a href="#links" class="magnetic-inner" data-i18n="nav-links">links</a></li>
+      <li class="magnetic-wrap"><a href="#contact" class="magnetic-inner" data-i18n="nav-contact">contact</a></li>
+      <li>
+        <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()">EN</button>
+      </li>
+    </ul>
+  </nav>
+
+  <section id="hero">
+    <div class="fade-in">
+      <div class="magnetic-wrap" style="display: block;">
+        <div class="magnetic-inner hero-content-wrapper" style="width: 100%;">
+          <p class="hero-greeting" data-i18n="hero-greeting"><span>01.</span> hello, world</p>
+          <h1 class="hero-name">Hi, I'm Cohen.</h1>
+          <p class="hero-tagline" data-i18n="hero-tagline">Developer & creator. Building digital experiences that merge technical precision with
+            fluid aesthetics.</p>
+        </div>
+      </div>
+      <div class="mt-4">
+        <a href="mailto:q63725959@gmail.com" class="hero-email">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <span data-i18n="hero-email-btn">发送邮件联系</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="section-label"><span>02.</span> <span data-i18n="section-about">About</span></div>
+    <p class="about-text fade-in" data-i18n-html="about-text">
+      欢迎来到我的个人主页。我对技术和创造充满热情，喜欢把想法变成现实。<br><br>
+      目前专注于 <strong>软件开发</strong> 与 <strong>个人项目</strong>，持续探索新的工具与可能性。致力于构建高效、优雅且具有极佳交互体验的数字产品。<br><br>
+      有任何想法或合作意向，欢迎随时与我联系。
+    </p>
+  </section>
+
+  <section id="projects">
+    <div class="section-label"><span>03.</span> <span data-i18n="section-projects">Projects</span></div>
+    <div class="projects-grid">
+      <div class="magnetic-wrap" style="display: block;">
+        <a href="https://github.com/Cohenjikan/sync-station" target="_blank" class="project-card magnetic-inner fade-in"
+          style="width: 100%;">
+          <div class="project-card-header">
+            <span class="project-name">Sync Station</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc" data-i18n="project-sync-desc">私有跨设备同步工具，支持文本与文件的实时共享，基于 WebSocket 实现即时更新，提供双视图布局与 PIN 锁保护。</p>
+          <div class="project-tags">
+            <span class="tag">JavaScript</span>
+            <span class="tag">WebSocket</span>
+            <span class="tag">HTML</span>
+            <span class="tag">Open Source</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="magnetic-wrap" style="display: block;">
+        <a href="https://github.com/TH-Chen-CN/PrimerScore" target="_blank" class="project-card magnetic-inner fade-in"
+          style="width: 100%;">
+          <div class="project-card-header">
+            <span class="project-name">PrimerScore Web</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc" data-i18n="project-primer-desc">PCR 引物设计工具的网页化实现，支持 BLAST 校验与表达感知评分，提升了生信工具的交互体验与可访问性。</p>
+          <div class="project-tags">
+            <span class="tag">Python</span>
+            <span class="tag">Bioinformatics</span>
+            <span class="tag">BLAST</span>
+            <span class="tag">Web</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="social">
+    <div class="section-label"><span>04.</span> <span data-i18n="section-social">Social</span></div>
+    <div class="social-list">
+      <div class="magnetic-wrap">
+        <a href="mailto:q63725959@gmail.com" class="social-item magnetic-inner fade-in" style="width: 100%;">
+          <div class="social-item-left">
+            <div class="social-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div class="social-name">Email</div>
+              <div class="social-handle">q63725959@gmail.com</div>
+            </div>
+          </div>
+          <span class="social-arrow">↗</span>
+        </a>
+      </div>
+
+      <div class="magnetic-wrap">
+        <a href="https://github.com/Cohenjikan" target="_blank" class="social-item magnetic-inner fade-in"
+          style="width: 100%;">
+          <div class="social-item-left">
+            <div class="social-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                </path>
+              </svg>
+            </div>
+            <div>
+              <div class="social-name">GitHub</div>
+              <div class="social-handle">@Cohenjikan</div>
+            </div>
+          </div>
+          <span class="social-arrow">↗</span>
+        </a>
+      </div>
+
+      <div class="magnetic-wrap">
+        <a href="https://www.instagram.com/mk.cohen.3/" target="_blank" class="social-item magnetic-inner fade-in"
+          style="width: 100%;">
+          <div class="social-item-left">
+            <div class="social-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </div>
+            <div>
+              <div class="social-name">Instagram</div>
+              <div class="social-handle">@mk.cohen.3</div>
+            </div>
+          </div>
+          <span class="social-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="links">
+    <div class="section-label"><span>05.</span> <span data-i18n="section-links">Friend Links</span></div>
+    <div class="social-list">
+      <div class="magnetic-wrap">
+        <a href="https://louie1.com" target="_blank" class="social-item magnetic-inner fade-in" style="width: 100%;">
+          <div class="social-item-left">
+            <div class="social-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="social-name" data-i18n="links-louie-name">Louie 的主页</div>
+              <div class="social-handle">louie1.com</div>
+            </div>
+          </div>
+          <span class="social-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <h2 class="contact-title fade-in">What's Next?</h2>
+    <p class="contact-desc fade-in" data-i18n="contact-desc">虽然我目前主要在进行独立开发，但我的收件箱始终敞开。无论是有项目合作、技术交流，还是简单地打个招呼，我都会尽量回复。</p>
+    <div class="magnetic-wrap">
+      <a href="mailto:q63725959@gmail.com" class="hero-email magnetic-inner fade-in">
+        Say Hello
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <span id="footer-year"></span> Cohen &mdash; <span data-i18n="footer-built">本地 ♥ 构建</span>
+  </footer>
+
+  <script src="lib/luxon.min.js"></script>
+  <script>
+    // ── i18n ──────────────────────────────────────────────────────────────────
+    const translations = {
+      zh: {
+        'nav-about': 'about',
+        'nav-projects': 'projects',
+        'nav-social': 'social',
+        'nav-links': 'links',
+        'nav-contact': 'contact',
+        'hero-greeting': '<span>01.</span> hello, world',
+        'hero-tagline': 'Developer & creator. Building digital experiences that merge technical precision with fluid aesthetics.',
+        'hero-email-btn': '发送邮件联系',
+        'section-about': 'About',
+        'section-projects': 'Projects',
+        'section-social': 'Social',
+        'section-links': 'Friend Links',
+        'about-text': '欢迎来到我的个人主页。我对技术和创造充满热情，喜欢把想法变成现实。<br><br>目前专注于 <strong>软件开发</strong> 与 <strong>个人项目</strong>，持续探索新的工具与可能性。致力于构建高效、优雅且具有极佳交互体验的数字产品。<br><br>有任何想法或合作意向，欢迎随时与我联系。',
+        'project-sync-desc': '私有跨设备同步工具，支持文本与文件的实时共享，基于 WebSocket 实现即时更新，提供双视图布局与 PIN 锁保护。',
+        'project-primer-desc': 'PCR 引物设计工具的网页化实现，支持 BLAST 校验与表达感知评分，提升了生信工具的交互体验与可访问性。',
+        'links-louie-name': 'Louie 的主页',
+        'contact-desc': '虽然我目前主要在进行独立开发，但我的收件箱始终敞开。无论是有项目合作、技术交流，还是简单地打个招呼，我都会尽量回复。',
+        'footer-built': '本地 ♥ 构建',
+      },
+      en: {
+        'nav-about': 'about',
+        'nav-projects': 'projects',
+        'nav-social': 'social',
+        'nav-links': 'links',
+        'nav-contact': 'contact',
+        'hero-greeting': '<span>01.</span> hello, world',
+        'hero-tagline': 'Developer & creator. Building digital experiences that merge technical precision with fluid aesthetics.',
+        'hero-email-btn': 'Send me an email',
+        'section-about': 'About',
+        'section-projects': 'Projects',
+        'section-social': 'Social',
+        'section-links': 'Friend Links',
+        'about-text': 'Welcome to my personal site. I\'m passionate about technology and creation — I love turning ideas into reality.<br><br>Currently focused on <strong>software development</strong> and <strong>personal projects</strong>, constantly exploring new tools and possibilities. Dedicated to building efficient, elegant digital products with great interactive experiences.<br><br>If you have any ideas or collaboration proposals, feel free to reach out anytime.',
+        'project-sync-desc': 'A private cross-device sync tool that supports real-time text and file sharing via WebSocket, featuring a dual-view layout and PIN lock protection.',
+        'project-primer-desc': 'A web-based implementation of a PCR primer design tool with BLAST validation and expression-aware scoring, improving accessibility and UX for bioinformatics workflows.',
+        'links-louie-name': "Louie's Homepage",
+        'contact-desc': "While I'm mostly focused on independent development, my inbox is always open. Whether it's a collaboration proposal, a tech chat, or just a hello — I'll do my best to reply.",
+        'footer-built': 'Built with ♥ locally',
+      }
+    };
+
+    let currentLang = 'zh';
+
+    function applyLang(lang) {
+      const t = translations[lang];
+      // text nodes
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+          el.innerHTML = t[key];
+        }
+      });
+      // html nodes (same attribute, just use innerHTML — already done above)
+      // hero-greeting needs innerHTML for the <span>
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (t[key] !== undefined) {
+          el.innerHTML = t[key];
+        }
+      });
+      document.getElementById('lang-toggle').textContent = lang === 'zh' ? 'EN' : '中';
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      applyLang(currentLang);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    document.getElementById('footer-year').textContent = '© ' + luxon.DateTime.now().year;
+
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    const magneticElements = document.querySelectorAll('.magnetic-wrap');
+    magneticElements.forEach((el) => {
+      const inner = el.querySelector('.magnetic-inner');
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const distX = e.clientX - centerX;
+        const distY = e.clientY - centerY;
+        const magneticStrength = 0.3;
+        inner.style.transform = `translate(${distX * magneticStrength}px, ${distY * magneticStrength}px)`;
+      });
+      el.addEventListener('mouseleave', () => {
+        inner.style.transform = 'translate(0px, 0px)';
+      });
+    });
+
+    const canvas = document.getElementById('fluid-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    let particles = [];
+    let mouse = { x: -1000, y: -1000 };
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initParticles();
+    }
+    window.addEventListener('resize', resize);
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener('mouseleave', () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    });
+
+    function initParticles() {
+      particles = [];
+      const numParticles = Math.floor((width * height) / 3000);
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          baseX: Math.random() * width,
+          baseY: Math.random() * height,
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 1.5 + 0.5
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = 'rgba(100, 255, 218, 0.5)';
+      ctx.strokeStyle = 'rgba(100, 255, 218, 0.15)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+
+        p.baseX += p.vx;
+        p.baseY += p.vy;
+
+        if (p.baseX < 0 || p.baseX > width) p.vx *= -1;
+        if (p.baseY < 0 || p.baseY > height) p.vy *= -1;
+
+        let targetX = p.baseX;
+        let targetY = p.baseY;
+
+        let dx = mouse.x - p.baseX;
+        let dy = mouse.y - p.baseY;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let maxDist = 300;
+
+        if (dist < maxDist) {
+          let force = (maxDist - dist) / maxDist;
+          targetX += dx * force * 0.6;
+          targetY += dy * force * 0.6;
+        }
+
+        p.x += (targetX - p.x) * 0.1;
+        p.y += (targetY - p.y) * 0.1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          let p1 = particles[i];
+          let p2 = particles[j];
+          let dx = p1.x - p2.x;
+          let dy = p1.y - p2.y;
+          let dist = dx * dx + dy * dy;
+
+          if (dist < 8000) {
+            ctx.globalAlpha = 1 - (dist / 8000);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    animate();
+  </script>
+</body>
+
+</html>
