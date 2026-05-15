@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import TiltedCard from '../components/reactbits/Components/TiltedCard/TiltedCard';
 import Magnet from '../components/reactbits/Animations/Magnet/Magnet';
 import StarBorder from '../components/reactbits/Animations/StarBorder/StarBorder';
 import { getProjectBySlug, type Locale } from '../content/projects';
 
 const Placeholder = ({ label }: { label: string }) => (
-  <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-dashed border-white/10 bg-surface/40 text-sm uppercase tracking-[0.2em] text-muted">
-    {label}
+  <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-dashed border-white/10 bg-surface/40 text-sm text-muted">
+    <span className="font-mono tracking-wide">{label}</span>
   </div>
 );
 
@@ -100,28 +99,21 @@ export const ProjectDetailPage = () => {
         </div>
       </header>
 
-      {/* Hero image — tilted */}
+      {/* Hero image */}
       <section className="mb-24">
-        <div className="mx-auto max-w-4xl">
-          <TiltedCard
-            imageSrc={project.heroImage}
-            altText={`${project.name} hero screenshot`}
-            captionText={project.name}
-            containerHeight="auto"
-            containerWidth="100%"
-            imageHeight="auto"
-            imageWidth="100%"
-            scaleOnHover={1.04}
-            rotateAmplitude={8}
-            showMobileWarning={false}
-            showTooltip={false}
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-surface/40 shadow-2xl">
+          <img
+            src={project.heroImage}
+            alt={`${project.name} hero screenshot`}
+            loading="eager"
+            className="block h-auto w-full object-contain"
           />
         </div>
       </section>
 
       {/* Features — alternating */}
       <section className="mb-24">
-        <h2 className="mb-12 font-mono text-sm uppercase tracking-[0.2em] text-accent">
+        <h2 className="mb-12 font-mono text-sm uppercase tracking-[0.18em] text-accent [&:lang(zh)]:tracking-normal">
           {t('project.features')}
         </h2>
         <div className="space-y-20">
@@ -156,7 +148,7 @@ export const ProjectDetailPage = () => {
 
       {/* Tech stack */}
       <section className="mb-12">
-        <h2 className="mb-6 font-mono text-sm uppercase tracking-[0.2em] text-accent">
+        <h2 className="mb-6 font-mono text-sm uppercase tracking-[0.18em] text-accent [&:lang(zh)]:tracking-normal">
           {t('project.techStack')}
         </h2>
         <div className="flex flex-wrap gap-3">
