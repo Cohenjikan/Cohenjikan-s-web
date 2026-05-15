@@ -195,7 +195,12 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
   bandTexture.wrapS = bandTexture.wrapT = THREE.RepeatWrapping;
   cardTexture.flipY = false;
   cardTexture.colorSpace = THREE.SRGBColorSpace;
+  cardTexture.wrapS = cardTexture.wrapT = THREE.ClampToEdgeWrapping;
+  cardTexture.generateMipmaps = false;
+  cardTexture.minFilter = THREE.LinearFilter;
+  cardTexture.magFilter = THREE.LinearFilter;
   cardTexture.anisotropy = 16;
+  cardTexture.needsUpdate = true;
 
   return (
     <>
@@ -216,9 +221,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
           {...segmentProps}
           type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
         >
-          <CuboidCollider args={[0.8, 1.125, 0.01]} />
+          <CuboidCollider args={[0.66, 1.125, 0.006]} />
           <group
-            scale={2.25}
+            scale={[1.86, 2.25, 0.65]}
             position={[0, -1.2, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}

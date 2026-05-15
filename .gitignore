@@ -13,3 +13,4 @@ _legacy/
 
 # Local Claude Code permission whitelist — per-user, do not commit
 .claude/settings.local.json
+.claude/worktrees/

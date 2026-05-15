@@ -700,9 +700,13 @@ README:
 
 ### Visual / animation system
 - **Lanyard texture** lives entirely in `cohen-card.svg`. The GLB geometry is
-  untouched. Front art runs from atlas region (0..928, 0..1240); back is
-  (1084..1940, 52..1180). Anything below ~y=1180 on the front clips into the
-  card's lower bevel — keep that area for thin decorative strokes only.
+  untouched. As of the 2026-05-16 Codex repair, the front is one blended raster
+  atlas spanning (0..1084, 0..1240): the real front card art plus a feathered
+  right-edge continuation, so the old (928..1084) gap is intentionally occupied.
+  The back is still (1084..1940, 52..1180), with a dark bleed guard at
+  (1052..1084) to stop mip/filtering bleed from the front. Anything below
+  ~y=1180 on the front clips into the card's lower bevel, so keep that area for
+  thin decorative strokes only.
 - **QR replacement**: drop a new image at `_legacy/source-assets/<name>.jpg`
   and re-run the bash pipeline at the top of the "Lanyard Card Visual Overhaul
   (round 2)" entry to regenerate `cohen-card.svg`.
