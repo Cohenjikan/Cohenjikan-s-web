@@ -132,3 +132,34 @@
 - Browser menu check confirms the panel now shows `HOME`, `PROJECTS`, `SOCIAL`, and `CONTACT` with no numeric labels.
 - Browser hero check confirms the stray dot under the title is gone.
 - `npm run build` passes with the approved non-sandbox build permission.
+
+## 2026-05-16 Lanyard Raster Atlas Repair
+
+### Goal
+- Replace the simplified Lanyard front art with the user's Image2-style card face.
+- Remove the visible right-side black strip on the 3D card without making the front face look like a pasted patch.
+- Fix front/back atlas bleed after extending the front art region.
+
+### Investigation Notes
+- The GLB uses a 2048x1536 texture atlas. The visible front face originally occupied `x=0..928`, while the card bevel/side could sample the empty `x=928..1084` gap.
+- Simply scaling the 3D mesh narrower made the right-side strip more visible because the model still exposes bevel geometry.
+- Drawing a synthetic SVG strip fixed the black edge but looked like a separate design layer.
+- A separate right-edge PNG strip still left a vertical seam at `x=928`; the correct fix was to bake the front face plus edge continuation into one blended raster atlas.
+- Extending the front raster to `x=1084` made the back face vulnerable to texture-filtering bleed from the front art, especially with mipmaps enabled.
+
+### Major Changes
+- Rebuilt the front atlas from `_legacy/source-assets/carddesign.png`:
+  - cropped the user's real front card art,
+  - extended the front atlas to `x=0..1084`,
+  - crossfaded across `x=890..982` so the `x=928` UV boundary is no longer a hard image seam.
+- Kept the back face in the existing `x=1084..1940, y=52..1180` region, but added a dark `x=1052..1084` bleed guard so back-edge filtering samples back-colored pixels instead of front purple pixels.
+- Adjusted the rendered card proportions in `Lanyard.tsx`: collider `args={[0.66, 1.125, 0.006]}` and mesh scale `[1.86, 2.25, 0.65]`, keeping the card visually slim while reducing the exposed side thickness.
+- Updated `cardTexture` settings for atlas safety: `ClampToEdgeWrapping`, disabled mipmaps, and set linear min/mag filters to prevent distant mip levels from blending unrelated atlas regions.
+
+### Verification
+- User browser review confirmed:
+  - front face now matches the provided Image2 design closely,
+  - right-side black strip is removed,
+  - the previous vertical crop seam is no longer visible,
+  - back-face purple bleed from the front atlas is resolved.
+- `npm run build` passes with the approved non-sandbox build permission after the final bleed/filtering changes.
