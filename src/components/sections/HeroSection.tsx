@@ -22,7 +22,7 @@ export const HeroSection = () => {
           delay={120}
           animateBy="letters"
           direction="top"
-          className="bg-accent-gradient bg-clip-text text-[clamp(3.75rem,10vw,7.75rem)] font-bold leading-[0.95] tracking-normal text-transparent drop-shadow-[0_2px_28px_rgba(0,0,0,0.5)]"
+          className="hero-title-blur bg-accent-gradient bg-clip-text text-[clamp(2.5rem,9vw,7.75rem)] font-bold leading-[0.95] tracking-normal text-transparent drop-shadow-[0_2px_28px_rgba(0,0,0,0.5)]"
         />
 
         <p className="mt-8 max-w-3xl text-lg font-bold leading-relaxed text-text/90 md:text-2xl drop-shadow-[0_1px_10px_rgba(0,0,0,0.55)]">

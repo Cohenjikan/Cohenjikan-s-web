@@ -384,7 +384,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
 
   return (
     <div
-      className={`sm-scope z-40 ${isFixed ? 'fixed top-0 left-0 w-screen h-screen overflow-hidden' : 'w-full h-full'}`}
+      className={`sm-scope z-40 ${isFixed ? 'fixed inset-0 overflow-hidden' : 'w-full h-full'}`}
     >
       <div
         className={
@@ -578,8 +578,10 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
 .sm-scope .sm-panel-item:hover { color: var(--sm-accent, #ff0000); }
 .sm-scope .sm-panel-list[data-numbering] { counter-reset: smItem; }
 .sm-scope .sm-panel-list[data-numbering] .sm-panel-item::after { counter-increment: smItem; content: counter(smItem, decimal-leading-zero); position: absolute; top: 0.1em; right: 3.2em; font-size: 18px; font-weight: 400; color: var(--sm-accent, #ff0000); letter-spacing: 0; pointer-events: none; user-select: none; opacity: var(--sm-num-opacity, 0); }
-@media (max-width: 1024px) { .sm-scope .staggered-menu-panel { width: 100%; left: 0; right: 0; } .sm-scope .staggered-menu-wrapper[data-open] .sm-logo-img { filter: invert(100%); } }
-@media (max-width: 640px) { .sm-scope .staggered-menu-panel { width: 100%; left: 0; right: 0; } .sm-scope .staggered-menu-wrapper[data-open] .sm-logo-img { filter: invert(100%); } }
+.sm-scope .sm-toggle { padding: 0.5rem 0.6rem; min-height: 44px; touch-action: manipulation; }
+.sm-scope .staggered-menu-wrapper[data-open] .sm-toggle { background: rgba(255,255,255,0.85); border-radius: 9999px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+@media (max-width: 1024px) { .sm-scope .staggered-menu-panel { width: 100vw; max-width: 100%; left: 0; right: 0; } .sm-scope .sm-prelayers { width: 100vw; max-width: 100%; left: 0; right: 0; } .sm-scope .staggered-menu-wrapper[data-open] .sm-logo-img { filter: invert(100%); } }
+@media (max-width: 640px) { .sm-scope .staggered-menu-panel { width: 100vw; max-width: 100%; left: 0; right: 0; padding: 5em 1.5em 2em 1.5em; } .sm-scope .sm-prelayers { width: 100vw; max-width: 100%; left: 0; right: 0; } .sm-scope .staggered-menu-wrapper[data-open] .sm-logo-img { filter: invert(100%); } .sm-scope .sm-panel-item { font-size: 2.75rem; letter-spacing: -1px; } .sm-scope .staggered-menu-header { padding: 1.25em; } .sm-scope .sm-toggle { font-size: 1.05rem; } }
       `}</style>
     </div>
   );

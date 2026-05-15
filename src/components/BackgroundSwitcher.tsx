@@ -20,10 +20,10 @@ const ENTRIES: BgEntry[] = [
   { id: 'aurora', weight: 'light', render: () => <Aurora colorStops={['#7C3AED', '#22D3EE', '#FF50AA']} amplitude={1.1} blend={0.55} /> },
   { id: 'grainient', weight: 'light', render: () => <Grainient /> },
   { id: 'colorbends', weight: 'light', render: () => <ColorBends /> },
-  { id: 'prism', weight: 'heavy', render: () => <Prism animationType="3drotate" timeScale={0.4} glow={1.2} bloom={1.0} /> },
-  { id: 'silk', weight: 'heavy', render: () => <Silk color="#5B4FE1" speed={2.5} scale={1.0} noiseIntensity={1.5} /> },
-  { id: 'iridescence', weight: 'heavy', render: () => <Iridescence color={[0.45, 0.35, 0.95]} speed={0.7} amplitude={0.08} /> },
-  { id: 'beams', weight: 'heavy', render: () => <Beams beamWidth={2} beamHeight={20} beamNumber={14} lightColor="#A78BFA" speed={2} noiseIntensity={1.5} scale={0.2} rotation={45} /> }
+  { id: 'prism', weight: 'heavy', render: () => <Prism animationType="3drotate" timeScale={0.3} glow={1.0} bloom={0.7} /> },
+  { id: 'silk', weight: 'heavy', render: () => <Silk color="#5B4FE1" speed={2.0} scale={1.0} noiseIntensity={1.2} /> },
+  { id: 'iridescence', weight: 'heavy', render: () => <Iridescence color={[0.45, 0.35, 0.95]} speed={0.6} amplitude={0.08} /> },
+  { id: 'beams', weight: 'heavy', render: () => <Beams beamWidth={2} beamHeight={20} beamNumber={10} lightColor="#A78BFA" speed={1.6} noiseIntensity={1.2} scale={0.2} rotation={45} /> }
 ];
 
 const STORAGE_KEY = 'cohen.lastBg';
@@ -38,11 +38,25 @@ interface BackgroundContextValue {
 
 const BackgroundContext = createContext<BackgroundContextValue | null>(null);
 
-const pickPool = (): BgEntry[] => {
-  if (typeof window === 'undefined') return ENTRIES.filter((e) => e.weight === 'light');
+const isLowEndDevice = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return true;
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
   const cores = navigator.hardwareConcurrency ?? 2;
-  if (isMobile || cores < 4) return ENTRIES.filter((e) => e.weight === 'light');
+  // navigator.deviceMemory is non-standard but supported in Chrome / Android Chrome.
+  const memory = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+  // Save-Data hint from network conditions.
+  const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (isMobile || isCoarsePointer) return true;
+  if (cores < 4) return true;
+  if (memory !== undefined && memory < 4) return true;
+  if (conn?.saveData) return true;
+  if (conn?.effectiveType && /(^|-)2g$/i.test(conn.effectiveType)) return true;
+  return false;
+};
+
+const pickPool = (): BgEntry[] => {
+  if (isLowEndDevice()) return ENTRIES.filter((e) => e.weight === 'light');
   return ENTRIES;
 };
 
@@ -121,6 +135,58 @@ export const BackgroundProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.dataset.bgTone = tone;
   }, [current, tone]);
 
+  // FPS watchdog: if the active heavy background sustains <28fps for ~2.5s, fall
+  // back to a light background. Browsers throttle rAF when the tab is hidden, so
+  // we skip sampling while document.hidden is true.
+  useEffect(() => {
+    if (reduced) return;
+    const currentEntry = ENTRIES.find((e) => e.id === current);
+    if (!currentEntry || currentEntry.weight !== 'heavy') return;
+
+    let raf = 0;
+    let lastT = performance.now();
+    let slowFrames = 0;
+    let cancelled = false;
+
+    const step = (t: number) => {
+      if (cancelled) return;
+      if (!document.hidden) {
+        const dt = t - lastT;
+        if (dt > 36) slowFrames++;
+        else slowFrames = Math.max(0, slowFrames - 1);
+        if (slowFrames > 60) {
+          const lightPool = ENTRIES.filter((e) => e.weight === 'light' && e.id !== current);
+          if (lightPool.length > 0) {
+            const fallback = lightPool[Math.floor(Math.random() * lightPool.length)];
+            const cs = slot.current;
+            if (cs === 'a') setB({ entry: fallback, visible: false });
+            else setA({ entry: fallback, visible: false });
+            window.setTimeout(() => {
+              if (cs === 'a') {
+                setB({ entry: fallback, visible: true });
+                setA((curr) => ({ ...curr, visible: false }));
+                slot.current = 'b';
+              } else {
+                setA({ entry: fallback, visible: true });
+                setB((curr) => (curr ? { ...curr, visible: false } : null));
+                slot.current = 'a';
+              }
+            }, 40);
+            cancelled = true;
+            return;
+          }
+        }
+      }
+      lastT = t;
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [current, reduced]);
+
   const ctx = useMemo<BackgroundContextValue>(
     () => ({ current, next, available: pool.map((p) => p.id) }),
     [current, next, pool]
@@ -142,7 +208,16 @@ export const BackgroundProvider = ({ children }: { children: ReactNode }) => {
 };
 
 const BgLayer = ({ state, fadeMs }: { state: LayerState | null; fadeMs: number }) => {
+  const [hidden, setHidden] = useState<boolean>(typeof document !== 'undefined' && document.hidden);
+  useEffect(() => {
+    const onVis = () => setHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   if (!state) return null;
+  // While the tab is hidden, drop the layer entirely so its rAF / WebGL loop stops
+  // and no GPU cycles are spent on an offscreen canvas.
+  if (hidden) return null;
   return (
     <div
       aria-hidden

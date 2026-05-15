@@ -72,6 +72,9 @@ html[data-bg-current='aurora'] {
 html {
   scroll-behavior: smooth;
   background-color: rgb(var(--color-bg));
+  overflow-x: hidden;
+  /* iOS Safari: prevent rubber-band horizontal scroll under fixed full-screen layers. */
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -86,6 +89,26 @@ body {
   /* body bg stays transparent so the BackgroundProvider canvas (negative z-index) is visible.
      html owns the fallback color above. */
   background-color: transparent;
+  /* Cap full-bleed width so 100vw children don't push scrollbar overflow on Android. */
+  max-width: 100%;
+}
+
+/* Hero "Hi, I'm Cohen" splits each glyph into an inline-block flex item via BlurText.
+   Without this, narrow viewports (Android browsers especially) can wrap a single
+   glyph (e.g. the C in Cohen) onto its own line. Force one line and let the clamp()
+   font-size shrink to fit. */
+.hero-title-blur {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Lanyard 3D card: the touch-action style on R3F's <Canvas> only lands on its
+   wrapper div. The actual <canvas> element keeps `touch-action: auto`, so on
+   touch devices the browser steals the gesture for page scroll before the
+   pointer-down handler can claim it. Force the inner canvas to release scroll. */
+#contact canvas {
+  touch-action: none;
 }
 
 /* BlurText splits each character into an inline-block <span>; bg-clip-text on the

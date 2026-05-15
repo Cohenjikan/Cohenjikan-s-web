@@ -76,7 +76,7 @@ export const SiteNav = () => {
           displaySocials
           accentColor={ACCENT}
           menuButtonColor="#fff"
-          openMenuButtonColor="#fff"
+          openMenuButtonColor="#0f0a1f"
           colors={['#241B3B', '#5227FF']}
           logoUrl="/logo.svg"
           displayItemNumbering={false}

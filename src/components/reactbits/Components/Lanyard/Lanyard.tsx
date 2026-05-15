@@ -54,11 +54,15 @@ export default function Lanyard({
   }, []);
 
   return (
-    <div className="relative z-0 w-full h-full flex justify-center items-center transform scale-100 origin-center">
+    <div
+      className="relative z-0 w-full h-full flex justify-center items-center transform scale-100 origin-center"
+      style={{ touchAction: 'none' }}
+    >
       <Canvas
         camera={{ position, fov }}
         dpr={[1, isMobile ? 1.5 : 2]}
-        gl={{ alpha: transparent }}
+        gl={{ alpha: transparent, antialias: !isMobile, powerPreference: 'high-performance' }}
+        style={{ touchAction: 'none' }}
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
         <ambientLight intensity={Math.PI} />
@@ -219,11 +223,12 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
             onPointerUp={(e: any) => {
-              e.target.releasePointerCapture(e.pointerId);
+              try { e.target.releasePointerCapture?.(e.pointerId); } catch { /* touch: target may not own capture */ }
               drag(false);
             }}
             onPointerDown={(e: any) => {
-              e.target.setPointerCapture(e.pointerId);
+              e.stopPropagation();
+              try { e.target.setPointerCapture?.(e.pointerId); } catch { /* touch: target may not be capturable */ }
               drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
             }}
           >

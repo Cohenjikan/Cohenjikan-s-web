@@ -454,6 +454,164 @@ works on every browser, including the throttled headless preview.
 
 ---
 
+## 2026-05-16 Mobile Polish + Background GPU Pass
+
+### Goal
+- Fix four mobile-specific UX regressions reported after the first deploy:
+  - (1a) StaggeredMenu panel covers the whole viewport on mobile and the close
+    button is invisible — user can't dismiss the menu.
+  - (1b) Page can be scrolled horizontally on mobile (rubber-band overflow).
+  - (1c) The Lanyard 3D card on Contact can't be dragged on touch devices.
+  - (1d) Hero "Hi, I'm Cohen" wraps a single glyph (the C) onto its own line on
+    Android Chrome at narrow widths.
+- (#2) The close icon in the menu's top-right is hidden because its colour
+  matches the white panel background (root cause of 1a).
+- (#3) Project detail pages render leftover unknown-font text bleeding out
+  beside the project hero image.
+- (#4) On certain backgrounds + low-end devices, GPU usage spikes and the page
+  stutters.
+
+### Investigation Notes
+- **Menu close invisible (#2 / 1a).** `SiteNav` was passing `openMenuButtonColor="#fff"`
+  *and* `menuButtonColor="#fff"`. The toggle button is `text-black` via Tailwind
+  when open, but GSAP's `colorTweenRef` overrides that with the `openMenuButtonColor`
+  white — so once open, the close label sat as white-on-white on the panel.
+- **Horizontal overflow (1b).** `StaggeredMenu` host wrapped its scope in
+  `w-screen h-screen` (= `100vw`). On Android Chrome `100vw` includes the
+  viewport scrollbar gutter; combined with `body { overflow-x: hidden }` only
+  (not `html`), the page allowed a horizontal swipe. Mobile media queries also
+  pinned the panel to `width: 100%` of the wrapper but the prelayers stayed at
+  `clamp(260px, 38vw, 420px)`, leaking past the viewport.
+- **3D card not draggable on touch (1c).** Two issues stacked. First,
+  `react-three-fiber`'s `<Canvas>` `style` prop only applies to the wrapping
+  `<div>`, not the inner `<canvas>` — so my initial `style={{ touchAction: 'none' }}`
+  on Canvas didn't reach the actual touch target. Browsers default
+  `touch-action: auto` on canvas → page steals the gesture for scroll before
+  pointer-down can claim it. Second, `e.target.setPointerCapture(...)` can throw
+  on touch when `e.target` is the canvas, not the mesh.
+- **Hero glyph wrap (1d).** `BlurText` splits "Hi, I'm Cohen" into 13
+  inline-block flex spans inside a `<p class="flex flex-wrap">`. With `flex-wrap: wrap`
+  any single span can wrap to a new line. The hero clamp `clamp(3.75rem,10vw,7.75rem)`
+  pinned a 60px floor, so on a 375px viewport the line was ~13 × 33px ≈ 429px and
+  one or two glyphs (the `C` of `Cohen` typically) would land on a new row.
+- **Project page leftover font (#3).** `ProjectDetailPage` rendered the hero
+  via `<TiltedCard containerHeight="auto" imageHeight="auto" />`. TiltedCard's
+  `<figure>` wraps a `motion.div` whose `<img>` is `position: absolute`. With
+  `height: auto` on both the figure and the inner div there are no flow
+  children, so both collapse to **height 0**. The image still paints — it just
+  doesn't push siblings down — so it overlaid the next section ("核心特性"
+  heading + first feature row). The "未知字体" the user was seeing was actually
+  the SmartImage placeholder text "截图待补充" (set in `text-sm uppercase
+  tracking-[0.2em]`, which renders awkwardly in CJK) bleeding out from
+  underneath the hero image's left edge.
+- **Heavy backgrounds (#4).** `pickPool()` only excluded heavy bgs on mobile
+  or `<4` cores. That missed: Save-Data hint, slow connections, low device
+  memory, coarse-pointer desktops, and any heavy-bg / device combo where it
+  *did* mount and then tanked frame rate after the fact (no escape hatch).
+
+### Major Changes
+- **`src/components/layout/SiteNav.tsx`** — `openMenuButtonColor` `#fff` →
+  `#0f0a1f` (resolves #2 / 1a).
+- **`src/components/reactbits/Components/StaggeredMenu/StaggeredMenu.tsx`** —
+  - `w-screen h-screen overflow-hidden` → `inset-0 overflow-hidden` on the host.
+  - Mobile media queries now pin **both** `.staggered-menu-panel` and
+    `.sm-prelayers` to `width: 100vw; max-width: 100%; left: 0; right: 0`.
+  - Mobile (`<= 640px`): panel padding shrunk to `5em 1.5em 2em 1.5em`,
+    `.sm-panel-item` font-size dropped to `2.75rem`, header padding `1.25em`.
+  - `.sm-toggle` gets `padding: 0.5rem 0.6rem`, `min-height: 44px`,
+    `touch-action: manipulation`. When the wrapper is `[data-open]`, the toggle
+    sits inside a white pill (`background: rgba(255,255,255,0.85)`,
+    `border-radius: 9999px`, soft shadow) so the close label always reads
+    against the panel.
+- **`src/components/reactbits/Components/Lanyard/Lanyard.tsx`** —
+  - Outer wrapper + `<Canvas>` both get `style={{ touchAction: 'none' }}`.
+    (Wrapper is the one that actually sticks; the canvas-side rule is in
+    `globals.css` — see below.)
+  - Added `gl={{ alpha: transparent, antialias: !isMobile, powerPreference: 'high-performance' }}`
+    so mobile drops MSAA.
+  - `onPointerDown` / `onPointerUp` capture calls wrapped in `try { ... } catch`
+    so touch events with non-capturable targets don't throw; `pointerdown` also
+    `e.stopPropagation()`'s to keep the gesture inside the card group.
+- **`src/styles/globals.css`** —
+  - `html { overflow-x: hidden; overscroll-behavior-x: none; }` (1b).
+  - `body { max-width: 100% }` (belt-and-braces against `100vw` children).
+  - New `.hero-title-blur` utility: `flex-wrap: nowrap !important; white-space:
+    nowrap; max-width: 100%`. This is the override applied in HeroSection.
+  - New `#contact canvas { touch-action: none; }` — the actual fix for 1c. R3F's
+    style prop lands on the outer div, not the canvas, so we need a CSS rule
+    targeting the inner element directly.
+- **`src/components/sections/HeroSection.tsx`** — BlurText className becomes
+  `"hero-title-blur bg-accent-gradient bg-clip-text text-[clamp(2.5rem,9vw,7.75rem)] ..."`.
+  Min font-size 3.75rem → 2.5rem; max stays 7.75rem; vw scale 10 → 9.
+- **`src/pages/ProjectDetailPage.tsx`** —
+  - Hero image now renders as a plain `<img class="block h-auto w-full
+    object-contain" />` inside a `max-w-4xl rounded-2xl border` wrapper. No
+    more TiltedCard for the hero. (TiltedCard is kept in the codebase for
+    other potential use; it's not deleted.)
+  - SmartImage `Placeholder` typography cleaned: dropped `uppercase
+    tracking-[0.2em]`, wrapped the label in `<span class="font-mono
+    tracking-wide">` so CJK ("截图待补充") renders normally instead of with
+    blown-out letter-spacing.
+  - Section headings (`核心特性` / `技术栈`) use a CJK-aware class:
+    `font-mono text-sm uppercase tracking-[0.18em] text-accent
+    [&:lang(zh)]:tracking-normal`. (Affects only `lang=zh` ancestors, but is
+    harmless when the lang attr isn't set.)
+- **`src/components/BackgroundSwitcher.tsx`** —
+  - Replaced `pickPool()` with `isLowEndDevice()` that checks: mobile width,
+    `(pointer: coarse)`, `hardwareConcurrency < 4`, `navigator.deviceMemory < 4`,
+    Network Information API `saveData` / `effectiveType === '2g'`.
+  - Heavy bg parameters tuned down (Prism `timeScale 0.4 → 0.3`, Beams
+    `beamNumber 14 → 10` + `speed 2 → 1.6`, Silk `speed 2.5 → 2`, etc.).
+  - **FPS watchdog** on the active heavy bg: samples rAF deltas; if more than
+    60 frames inside the rolling window come in over 36ms (≈ <28fps), it picks
+    a random light bg and runs the same two-step fade as `next()`. Skips
+    sampling while `document.hidden` is true to avoid false positives from
+    background-tab throttling. Skipped entirely under `prefersReducedMotion()`.
+  - **`BgLayer`** now subscribes to `visibilitychange` and returns `null` while
+    `document.hidden` is true. That fully unmounts the WebGL canvas / rAF when
+    the tab loses focus, so a backgrounded tab burns zero GPU cycles instead
+    of the throttled-but-still-running default.
+
+### Verification
+- Tooling: `npx tsc --noEmit` passes clean.
+- Preview at 375 × 812 (mobile preset):
+  - `getComputedStyle('.hero-title-blur')`: `flexWrap: 'nowrap'`,
+    `whiteSpace: 'nowrap'`, `fontSize: '40px'`. Title `scrollWidth = 327px`
+    inside a `375px` viewport — fits with margin to spare.
+  - `document.documentElement.scrollWidth === clientWidth` (375 px), no
+    horizontal scroll, `htmlOverflowX: 'hidden'`.
+  - With menu open: `.sm-toggle` computed `color: rgb(15, 10, 31)` on a
+    white pill, `height: 44px`, position `(260, 17)` — fully on-screen,
+    label "Close ×" clearly visible.
+  - `#contact canvas`: `getComputedStyle().touchAction === 'none'` ✓ (the
+    important one — confirms the CSS rule, not just the wrapper style).
+- Preview at desktop on `/projects/sync-station`: hero image now sits in its
+  own bordered card with proper flow height, `核心特性` heading appears below
+  it (not under it), no "截图待补充" text leaking out beside the hero. No
+  console errors, no server errors.
+- The FPS watchdog wasn't triggered in preview (we're on a fast desktop) —
+  the code path is exercised only on real low-end mobile / older GPUs.
+  Tested manually by temporarily lowering the threshold to 5 frames and
+  confirming the fallback fade fires, then reverted.
+
+### Technical Blockers
+- **R3F Canvas style prop misdirection.** Spent a round assuming
+  `style={{ touchAction: 'none' }}` on `<Canvas>` would land on the
+  `<canvas>`. It doesn't — R3F applies it to the wrapper div. The CSS
+  `#contact canvas { touch-action: none }` rule is what actually resolves
+  the touch-drag failure. Worth remembering: any per-element CSS that
+  needs to land on the canvas element itself in R3F has to go through
+  global CSS or a callback ref, not the style prop.
+- **Orphan vite on port 5173.** During verification, an earlier dev server
+  was still bound to 5173, so `preview_start` quietly created a new one on
+  5174 while the preview tab still talked to the stale 5173 instance.
+  Symptom was "edits not reflecting in the browser" despite HMR. Killed
+  the orphan (`taskkill //F //PID …`) and restarted preview. If this
+  happens again: check `netstat -ano | grep 5173` for a stranded PID
+  before restarting preview.
+
+---
+
 ## 2026-05-16 First Deploy to `Cohenjikan/Cohenjikan-s-web`
 
 ### Goal
