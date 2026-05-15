@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Theme A — Violet → Cyan (default) */
+:root,
+[data-theme='violet-cyan'] {
+  --color-bg: 6 6 14;
+  --color-surface: 14 14 28;
+  --color-border: 30 30 48;
+  --color-text: 232 232 240;
+  --color-muted: 138 138 160;
+  --color-accent: 125 211 252;       /* sky 300 */
+  --color-accent-2: 167 139 250;     /* violet 400 */
+}
+
+/* Theme B — Magenta → Lime */
+[data-theme='magenta-lime'] {
+  --color-bg: 5 6 8;
+  --color-surface: 12 13 17;
+  --color-border: 28 28 36;
+  --color-text: 234 237 240;
+  --color-muted: 138 143 156;
+  --color-accent: 255 80 170;
+  --color-accent-2: 198 255 62;
+}
+
+html[data-bg-tone='light'] {
+  --color-bg: 245 247 252;
+  --color-surface: 255 255 255;
+  --color-border: 148 163 184;
+  --color-text: 15 23 42;
+  --color-muted: 51 65 85;
+  --color-accent: 8 145 178;
+  --color-accent-2: 67 56 202;
+}
+
+html[data-bg-tone='dark'] {
+  --color-text: 245 247 252;
+  --color-muted: 183 190 206;
+  --color-accent: 125 211 252;
+  --color-accent-2: 167 139 250;
+}
+
+html[data-bg-current='aurora'] {
+  --color-accent: 15 23 42;
+  --color-accent-2: 14 116 144;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: rgb(var(--color-bg));
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  color: rgb(var(--color-text));
+  font-family: 'JetBrains Mono', 'PingFang SC', 'Microsoft YaHei', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* body bg stays transparent so the BackgroundProvider canvas (negative z-index) is visible.
+     html owns the fallback color above. */
+  background-color: transparent;
+}
+
+/* BlurText splits each character into an inline-block <span>; bg-clip-text on the
+   parent doesn't paint through inline-block children. Force each span to inherit
+   the parent's gradient + clip so the hero title renders correctly. */
+.blur-text > span {
+  background-image: inherit;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-bg));
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-border));
+  border-radius: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* react-bits often references the particle class globally */
+.particle {
+  pointer-events: none;
+}
+
+/* StaggeredMenu items render uniformly via react-bits; the Credits link is a
+   secondary / utility route (license + thanks) and shouldn't visually compete
+   with the primary section anchors (Home / Projects / Contact). We dial it down
+   in size and tint it with the accent so it reads as an auxiliary action.
+   The :is(.sm-scope) prefix matches the menu's own inline-style specificity. */
+:is(.sm-scope) .sm-panel-item[href='/credits'] {
+  font-size: 2.25rem !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  color: #5227FF !important;
+  text-transform: none !important;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+:is(.sm-scope) .sm-panel-item[href='/credits']:hover,
+:is(.sm-scope) .sm-panel-item[href='/credits']:focus-visible {
+  opacity: 1;
+  color: #A78BFA !important;
+}
+
+:is(.sm-scope) .sm-panel-item[href='/credits'] .sm-panel-itemLabel {
+  color: inherit;
+}
+
+:is(.sm-scope) .sm-panel-item[href='/credits']::before {
+  content: '↗ ';
+  font-size: 0.7em;
+  margin-right: 0.3em;
+  opacity: 0.7;
+}

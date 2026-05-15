@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.vite
+*.local
+*.tsbuildinfo
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.log
+_legacy/
+
+# Local Claude Code permission whitelist — per-user, do not commit
+.claude/settings.local.json
