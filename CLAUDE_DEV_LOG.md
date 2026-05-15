@@ -1,8 +1,253 @@
 # Claude Development Log
 
 Notes from work done by Claude (Anthropic's Claude Code) on this project.
-Authored after Codex finished the entries in `CODEX_DEV_LOG.md`; the two logs are
-complementary, not duplicates.
+Entries are roughly chronological; Codex took over for the middle stretch and
+wrote `CODEX_DEV_LOG.md` — the two logs are complementary, not duplicates.
+Read them in this order to reconstruct full history:
+
+1. `CLAUDE_DEV_LOG.md` (this file) — Project Bootstrap entry
+2. `CLAUDE_DEV_LOG.md` — Bug Fix Pass entry
+3. `CLAUDE_DEV_LOG.md` — BackgroundSwitcher Rewrite entry
+4. `CODEX_DEV_LOG.md` — all 6 codex entries (Lanyard / footer / textures / merge)
+5. `CLAUDE_DEV_LOG.md` — Lanyard Round 2 onward (resumed from codex)
+
+---
+
+## 2026-05-13 Project Bootstrap & Initial Section Build
+
+### Goal
+- Replace the existing static `cohenjikan.com` HTML site with a React-based SPA
+  that hosts react-bits style visual effects (Aurora / Silk / Prism backgrounds,
+  Lanyard 3D card, StaggeredMenu, MagicBento, etc.), zh / en i18n, and a path
+  to per-project detail pages.
+- Land deployment-ready output for GitHub Pages with a custom domain.
+
+### Investigation Notes
+- Two source dirs were available locally: `C:\Users\Cohen\Desktop\cohenjikan.com`
+  (legacy site + a `lib/` folder with `JetBrainsMono*.woff2`) and
+  `C:\Users\Cohen\Desktop\react-bits-main` (the full react-bits monorepo). The
+  user expected a zipped components folder but it was actually unpacked source.
+- The user supplied three screenshots only — `sync.png`, `primerscore.png`,
+  `tinytalk.png` — one per project. Per-feature screenshots would come later.
+- The user explicitly asked to scaffold Vite + React + TypeScript + Tailwind v3
+  (not v4), with i18n through react-i18next and a router via react-router-dom.
+- react-bits ships with two variants — `src/ts-tailwind/` and a JS variant; we
+  pulled the TS-Tailwind variant. Their tooling chain assumes Tailwind v4
+  (`@tailwindcss/vite`), so we replicate it manually on Tailwind v3 with
+  PostCSS + autoprefixer.
+
+### Major Changes
+- **Repo layout under** `cohenjikan.com/`:
+  - `_legacy/` — moved the old `index.html` + screenshots + `lib/` here. Gitignored.
+  - `public/fonts/` — copied `JetBrainsMono.woff2` + `JetBrainsMono-Bold.woff2`.
+  - `public/projects/<slug>/hero.png` — each project's screenshot.
+  - `public/CNAME = cohenjikan.com`, `public/404.html` SPA shim, `public/logo.svg`.
+  - `_assets/` was intended for the user's zip drop; never used in the final flow.
+- **Config files**:
+  - `package.json` pinned to React 18.3.x and `@react-three/fiber` 8.x (NOT
+    react-bits's React 19 + r3f 9, which the host environment's Node 24 / npm 11
+    handled but the rest of the ecosystem wasn't ready for at the time).
+  - `vite.config.ts` with `base: '/'`, `assetsInclude: ['**/*.glb']`, and a
+    `manualChunks` split (`r3f`, `gsap`, `ogl`, `motion`) to keep the main
+    bundle reasonable.
+  - `tsconfig.json` with `moduleResolution: bundler`, `jsx: react-jsx`,
+    `strict: true`, `noUnusedLocals: false` (to keep iteration fast).
+  - `tailwind.config.ts` with theme tokens wired to CSS variables (`--color-bg`,
+    `--color-accent`, etc.), plus a custom `bg-accent-gradient` background-image
+    and `star-movement-*` keyframes for `<StarBorder>`.
+  - `postcss.config.js` with `tailwindcss` + `autoprefixer`.
+  - `.gitignore` excludes `_legacy/`, `node_modules`, `dist`, `*.tsbuildinfo`.
+- **react-bits component copies** — pulled 22 components verbatim from
+  `react-bits-main/src/ts-tailwind/` into `src/components/reactbits/`. Categories:
+  - Backgrounds (8): Aurora, Grainient, LineWaves, ColorBends, Prism, Silk,
+    Iridescence, Beams
+  - Components (9): StaggeredMenu, MagicBento, BorderGlow, TiltedCard,
+    ChromaGrid, Lanyard, Dock, GlassIcons (later), SpotlightCard (later)
+  - TextAnimations (3): BlurText, TrueFocus, ScrollFloat
+  - Animations (4): StarBorder, ShapeBlur, GradualBlur, Magnet
+  - Rationale for vendoring instead of `npm install`: react-bits isn't published
+    to npm; their canonical install flow is `npx jsrepo add`. Copying source
+    gives us full edit control for things like the Lanyard texture and the
+    Card-vs-h2 nesting fix.
+- **Content layer**:
+  - `src/content/about.ts` — exports `about` and `heroSubtitle` as `{zh, en}`.
+  - `src/content/projects.ts` — `ProjectDetail` shape (slug, name, tagline,
+    description, tags, githubUrl, liveUrl, heroImage, features[], techStack),
+    and a `projects` array seeded with Sync Station / PrimerScore Web / Tiny
+    Voice Room. Includes `getProjectBySlug` helper. Each project has 3 feature
+    slots pre-allocated with placeholder copy + image paths under
+    `/projects/<slug>/feature-<n>.jpg` (which fall back to a "Screenshot
+    coming soon" panel when the image 404s).
+- **i18n**: `src/i18n/index.ts` runs `i18next + LanguageDetector +
+  initReactI18next`. `localStorage` is the priority detection source so the
+  user's last toggle wins on refresh.
+- **Routing + layout**:
+  - `src/main.tsx` → React 18 `createRoot`, wraps `<BrowserRouter>`.
+  - `src/App.tsx` → `BackgroundProvider` → `SiteNav` → `Routes`
+    (`/`, `/projects/:slug`, catch-all to home) → originally `Footer` + `SiteDock`.
+  - `src/pages/HomePage.tsx` originally composed
+    `Hero → About → Projects → Social → Contact` separated by `<GradualBlur>`
+    section dividers; the divider component pulled into a tiny inline wrapper.
+  - `src/pages/ProjectDetailPage.tsx` — back-button + hero tilt + alternating
+    feature rows + tech-stack pills + automatic placeholder when images 404.
+- **BackgroundProvider (first attempt)**:
+  - 8 entries split by `weight: 'light' | 'heavy'`. Heavy bgs (Prism, Silk,
+    Iridescence, Beams) only enter the random pool when
+    `navigator.hardwareConcurrency >= 4` AND viewport is desktop.
+  - `pickRandom(pool, exclude)` to avoid hitting the same bg twice.
+  - First implementation used `<AnimatePresence mode="sync">` with a
+    `motion.div` keyed by `entry.id`, `initial={{opacity: 0, filter: 'blur(24px)'}}`
+    and `animate={{opacity: 1, filter: 'blur(0px)'}}`. This LOOKED right on
+    paper but failed at runtime — see the "BackgroundSwitcher Rewrite" entry
+    below for the postmortem.
+- **GitHub Pages plumbing**:
+  - `.github/workflows/deploy.yml` — Node 20 + `npm ci` + `npm run build` +
+    `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4`, triggered on
+    push to main.
+  - `public/404.html` — the [spa-github-pages](https://github.com/rafgraph/spa-github-pages)
+    shim that 302-bounces deep links back into the SPA with the original path
+    encoded into the query string.
+  - `index.html` head — the matching client-side decoder that reads the encoded
+    path and `history.replaceState`s it back to the real URL.
+
+### Technical Blockers
+- **react-bits expects React 19 + r3f 9**, the rest of the ecosystem (drei,
+  rapier, etc.) was lagging behind. Compromised on React 18.3 + r3f 8.17 +
+  drei 9.114 + rapier 1.5 — fully compatible chain.
+- **`tailwind.config.ts`** instead of `.js` — TS configs need a runner. Vite +
+  Tailwind v3 picks it up fine via PostCSS, no special setup.
+- **`assetsInclude: ['**/*.glb']`** required so `import cardGLB from './card.glb'`
+  inside the Lanyard component resolves to a URL string.
+- **vite-env.d.ts** had to declare `*.glb`, `*.png`, `*.jpg`, `*.svg`, `meshline`,
+  and (later) `JSX.IntrinsicElements.meshLineGeometry / meshLineMaterial`
+  for TypeScript to compile.
+
+### Verification
+- `npm install` resolved 228 packages in 26s on Node 24.14 / npm 11.
+- `npm run dev` came up at `http://localhost:5173` with HMR working.
+- All 4 home sections plus the hero rendered with content. Project cards
+  navigated to `/projects/<slug>`. i18n menu toggled. CNAME present in dist.
+
+---
+
+## 2026-05-13 Bug Fix Pass: First-Look Regressions
+
+### Goal
+Fix the visible defects after the first run:
+- Background was invisible despite being lazy-mounted (canvas was in DOM but
+  the screen was uniformly dark).
+- Hero "Hi, I'm Cohen." rendered as an invisible space between the eyebrow and
+  the subtitle.
+- DOM-nesting warning and stuck render once Projects scrolled into view.
+- Contact section's tilt card was throwing.
+
+### Investigation Notes
+- **Black background mystery**: `document.body` had `background-color:
+  rgb(6, 6, 14)` (from globals.css). The background canvas was at
+  `z-index: -10`. Negative z-index paints BELOW the body's own background fill
+  — so the canvas existed but was hidden by body. The `<html>` element already
+  has the same bg via `html { background-color: rgb(var(--color-bg)) }`, so
+  body's bg is redundant.
+- **Hero gradient invisible**: BlurText splits each character into a
+  `<motion.span style={{display: 'inline-block'}}>`. CSS `bg-clip-text` only
+  clips the parent's text — when inline-block children are introduced, the
+  parent's clipping no longer paints through them. The DOM had the right
+  characters, but every span computed to `color: rgba(0,0,0,0)` with no
+  background.
+- **ScrollFloat nested h2**: I had wrapped a `ScrollFloat` (which itself
+  renders an `<h2>`) inside a `SectionLabel` that also rendered an `<h2>`.
+  React's DOM-nesting warning fired and downstream consumers (project cards)
+  threw weird layout glitches.
+- **Contact useTransform hook violation**: my ContactSection's tilted-card
+  variant called `useTransform([glareX, glareY], ([x,y]) => ...)` inline inside
+  a `style={{ background: useTransform(...) }}` JSX prop — that's a hook call
+  in render-time conditional context. Motion barked.
+
+### Major Changes
+- `src/styles/globals.css`:
+  - Switched `body { background-color: transparent }` so negative-z-index
+    siblings of `<body>` show through.
+  - Added a `.blur-text > span { background-image: inherit;
+    -webkit-background-clip: text; background-clip: text; color: transparent; }`
+    rule so each split character paints its slice of the parent gradient.
+- `src/components/sections/SectionLabel.tsx` — changed the heading element
+  from `<h2>` to `<div role="heading" aria-level={2}>` so children can inject
+  their own animated h2 wrapper (ScrollFloat) without nesting violations.
+- `src/components/sections/ContactSection.tsx` — lifted the
+  `useTransform([glareX, glareY], …)` out of JSX into the function body so
+  it became a stable motion value referenced in `style={{ background: glareBg }}`.
+- Set up `public/logo.svg` (small "cohen·" gradient mark) so StaggeredMenu's
+  default `logoUrl` fallback (which points to an internal `/src/assets/...`
+  path that doesn't exist in our copy) doesn't 404.
+
+### Verification
+- DOM eval after fixes:
+  - Background canvas opacity = 1, filter = blur(0px) → background visible.
+  - `.blur-text > span` had non-empty background and `bg-clip-text` resolving
+    through the gradient.
+  - No more DOM-nesting warnings in the console.
+- Headless preview screenshot caveat appeared here for the first time — see
+  the Handoff Notes section "Dev preview gotcha" at the bottom.
+
+---
+
+## 2026-05-13 BackgroundSwitcher Rewrite: AnimatePresence → Two-layer Fade
+
+### Goal
+The first-pass `<AnimatePresence>`-based background switcher visually got stuck
+at `opacity: 0, filter: blur(24px)` on initial mount — the user-clicked switch
+button appeared to do nothing. Replace with a deterministic two-layer fade that
+works on every browser, including the throttled headless preview.
+
+### Investigation Notes
+- DOM eval showed the motion.div had `style="opacity: 0; filter: blur(24px);"`
+  immediately after mount and never progressed.
+- AnimatePresence with `mode="sync"` plus a Suspense boundary inside the
+  motion.div appears to land in a state where the `animate` prop's transition
+  never fires — possibly because Suspense holds the child render off until
+  the lazy chunk loads, and by the time it does, the motion has already
+  passed its initial-frame trigger.
+- Switching to `mode="popLayout"` had its own issues with the WebGL canvases
+  being unmounted before exit animations completed.
+- Conclusion: AnimatePresence + Suspense + lazy WebGL components is a thorny
+  combination. Skip the abstraction.
+
+### Major Changes
+- `src/components/BackgroundSwitcher.tsx` — full rewrite:
+  - State is now two layers (`a` and `b`), each holding `{entry, visible}`.
+    A `slot` ref tracks which layer currently owns the "visible" state.
+  - On `next()`:
+    1. Mount the incoming layer in the OTHER slot with `visible: false` (paints
+       at `opacity: 0, filter: blur(20px)`).
+    2. After `setTimeout(40)` — one browser paint cycle — flip the new layer
+       to `visible: true` and the old layer to `visible: false`. CSS transitions
+       on `opacity` (600 ms) and `filter` (600 ms) interpolate both sides.
+    3. Toggle `slot.current` to the new slot.
+  - Each layer renders as `<BgLayer state={state} fadeMs={FADE_MS}/>` with
+    `data-bg-id` and `data-bg-visible` attributes for easy DOM inspection.
+  - `prefersReducedMotion()` short-circuits the timeout dance and swaps
+    instantly.
+  - Removed the `motion` / `AnimatePresence` imports entirely; this file no
+    longer depends on framer-motion.
+
+### Technical Blockers
+- Forwarded `setTimeout(..., 40)` was originally `requestAnimationFrame` ×2;
+  switched to setTimeout because rAF callbacks weren't reliably firing under
+  the headless preview's throttling, and a fixed timeout works in both real
+  browsers and the test environment.
+- Still observed `currentTime: 0` on the CSS animations under the headless
+  preview — confirmed that's a tooling throttle, not a real bug. State flips
+  and `data-bg-visible` attribute toggles fire correctly per DOM eval.
+
+### Verification
+- DOM eval timeline after clicking the "switch background" link in the menu:
+  - At t=0: 1 layer in DOM (the initial bg).
+  - At t=40ms: 2 layers in DOM — slot A (active, `visible: true`), slot B
+    (new bg, `visible: false`).
+  - At t=900ms: slot A `visible: false`, slot B `visible: true`,
+    `localStorage[cohen.lastBg]` updated to the new id.
+- Clicking the link 4 times in a row produced 4 different bgs (e.g.
+  `linewaves → aurora → grainient → iridescence`).
 
 ---
 
@@ -37,7 +282,8 @@ complementary, not duplicates.
 - `_backup/2026-05-15-pre-card-redesign/` — saved the previous `cohen-card.svg`,
   Hero/About/Projects/Contact sections, HomePage, SectionLabel and TrueFocus
   source files before touching them, so the user can roll back this revision
-  individually.
+  individually. (After deploy, this folder was moved into `_legacy/_backup/` to
+  keep it out of the published artifact.)
 - `src/components/reactbits/Components/Lanyard/cohen-card.svg`:
   - Preserved the existing `<defs>` block (JetBrains Mono Regular/Bold woff2 as
     data URLs, plus ink / glow / cyanViolet / microLines defs) — only the body
@@ -63,7 +309,8 @@ complementary, not duplicates.
   awk -v qr="$(cat /tmp/qr_b64.txt)" '{gsub(/__QR_BASE64__/, qr); print}' \
       /tmp/svg_body.txt >> cohen-card.svg
   ```
-  Same trick applies any future time the QR or card art changes.
+  Same trick applies any future time the QR or card art changes. The source
+  `wechatqr.jpg` sits in `_legacy/source-assets/` (gitignored) for re-runs.
 
 ### Verification
 - `document.querySelector('#contact canvas')` reports 508 × 640 after the local
@@ -207,34 +454,162 @@ complementary, not duplicates.
 
 ---
 
+## 2026-05-16 First Deploy to `Cohenjikan/Cohenjikan-s-web`
+
+### Goal
+- Publish the React build to the user's existing GitHub Pages repository,
+  replacing the legacy static HTML site that had been there.
+- Preserve the Apache-2.0 `LICENSE` file the legacy repo already had.
+
+### Investigation Notes
+- The remote `main` carried 5 legacy commits (static site iterations) plus the
+  Apache `LICENSE` and a `PR #1`. No CI had ever run on it — Pages was deploying
+  from the branch directly.
+- Custom domain `cohenjikan.com` was already wired up in the repo's Pages
+  settings, and DNS already pointed at the GitHub Pages IPs — verified by the
+  fact that `cohenjikan.com` was previously serving the legacy site from this
+  same repo.
+- Force-pushing was the right move (user-confirmed): the legacy main only
+  contained the static HTML that this whole project replaces.
+
+### Major Changes
+- **Cleanup before push**:
+  - Moved `carddesign.png` + `wechatqr.jpg` → `_legacy/source-assets/`
+    (gitignored, kept on disk for QR re-renders).
+  - Moved `_backup/2026-05-15-pre-card-redesign/` → `_legacy/_backup/`
+    (gitignored, kept on disk for selective rollback).
+  - Deleted `dist/` and `tsconfig.tsbuildinfo` (gitignored anyway, but
+    redundant locally).
+  - Added `.claude/settings.local.json` to `.gitignore` — that's a per-user
+    Claude Code permission whitelist, not portable.
+  - Kept `.claude/launch.json` tracked — it's the local Vite-dev preview
+    config and is portable enough to share.
+- **Push pipeline**:
+  ```bash
+  git init -b main
+  git remote add origin https://github.com/Cohenjikan/Cohenjikan-s-web.git
+  git fetch origin main
+  git checkout origin/main -- LICENSE   # preserve Apache 2.0
+  git add -A
+  git commit -m "Rebuild site as Vite + React + TypeScript SPA"   # 69 files, 12 629 +
+  git push --force-with-lease -u origin main
+  ```
+  Resulting state: remote head moved from `d143cd2` (legacy) → `fb8064c`
+  (this build).
+
+### Technical Blockers
+- Initial `mv _backup _legacy/_backup` hit a Windows permission error. Worked
+  around with `cp -r _backup _legacy/_backup && rm -rf _backup`.
+- `.claude/settings.local.json` was already staged (because `git add -A` runs
+  before the .gitignore patch is committed). Needed
+  `git rm --cached -f .claude/settings.local.json` to unstage.
+
+### Verification
+- `git log --oneline -1` on remote `main` returns `fb8064c Rebuild site as
+  Vite + React + TypeScript SPA`.
+- The workflow file `.github/workflows/deploy.yml` is on the remote — pushing
+  triggers it automatically.
+- User-side handoff: must verify Settings → Pages → Source is
+  `GitHub Actions` (not `Branch`). The legacy site used Branch mode and the
+  new build won't render correctly if that's still selected.
+
+---
+
 ## Handoff Notes for the Next Contributor
 
 If you're picking this up cold, here's what's worth knowing in addition to the
 README:
 
-- **Two parallel logs.** Codex started `CODEX_DEV_LOG.md`, I added this one. Both
-  are intentionally separate by author so you can see which agent owns which
-  decisions; the README points readers to whichever is relevant.
-- **`_backup/<date>-*/`** holds the pre-overhaul copies of every file the
-  Lanyard / About / Credits passes touched. Restore individual files from there
-  if any of those visual changes need to be reverted in isolation.
+### Repository / workflow
+- **Two parallel logs.** `CODEX_DEV_LOG.md` and `CLAUDE_DEV_LOG.md` are split by
+  agent author. Read order at the top of this file reconstructs full history.
+- **`_legacy/`** is gitignored and holds:
+  - `_legacy/index.html` + `_legacy/lib/` — the original static site this
+    project replaces.
+  - `_legacy/sync.png`, `primerscore.png`, `tinytalk.png` — the original
+    project screenshots before they were renamed to `public/projects/*/hero.png`.
+  - `_legacy/source-assets/carddesign.png` + `wechatqr.jpg` — the user-provided
+    sources for the Lanyard front-mock and the back QR. Re-run the SVG pipeline
+    from the "Lanyard Card Visual Overhaul (round 2)" entry if either changes.
+  - `_legacy/_backup/2026-05-15-pre-card-redesign/` — snapshots of every file
+    the Lanyard / About / Credits passes touched, in case any of those visual
+    changes needs to be reverted in isolation.
+- **Node**: developed on Node 24 / npm 11, CI runs on Node 20 LTS. Both work;
+  Node 18 will likely also work but isn't tested.
+- **No tests yet.** Verification has been: `npm run build` exits clean +
+  Playwright-ish hand checks in real browsers + the Claude Preview MCP for in-loop
+  DOM eval. If you add tests, Vitest + Testing Library is the natural fit.
+
+### Visual / animation system
 - **Lanyard texture** lives entirely in `cohen-card.svg`. The GLB geometry is
   untouched. Front art runs from atlas region (0..928, 0..1240); back is
   (1084..1940, 52..1180). Anything below ~y=1180 on the front clips into the
   card's lower bevel — keep that area for thin decorative strokes only.
-- **QR replacement.** Drop a new image at the project root and re-run the bash
-  pipeline at the top of the "Lanyard Card Visual Overhaul (round 2)" entry to
-  regenerate `cohen-card.svg`.
-- **Credits page.** Adding / removing a dependency means editing
-  `src/content/credits.ts` only. Special-thanks copy lives under
-  `credits.thanks.<key>` in `src/i18n/index.ts`; add a matching `ThanksEntry`
-  to the array in `credits.ts` if you want a new card.
-- **Menu link styling.** The Credits styling pattern in `globals.css` (`:is(.sm-scope)
-  .sm-panel-item[href='/...']`) is the prescribed way to demote any menu item —
-  StaggeredMenu does not accept per-item classes, and you'll fight its inline
-  `<style>` block on specificity if you forget the prefix.
+- **QR replacement**: drop a new image at `_legacy/source-assets/<name>.jpg`
+  and re-run the bash pipeline at the top of the "Lanyard Card Visual Overhaul
+  (round 2)" entry to regenerate `cohen-card.svg`.
+- **Background pool**: edit the `ENTRIES` array in
+  `src/components/BackgroundSwitcher.tsx`. Each entry needs `id`, `weight`
+  ('light' or 'heavy'), and a `render` thunk. Heavy bgs only enter the pool
+  when desktop + 4+ cores; the `pickPool()` helper enforces that.
+- **Theme variables**: `globals.css` defines two palettes via CSS variables on
+  `:root` and `[data-theme='magenta-lime']`. Switch by toggling `data-theme`
+  on `<html>`. Codex also added `html[data-bg-tone='light' | 'dark']` overrides
+  for the BG provider to flip text/accent colors when a light background
+  (eg. Aurora) is rolled — the provider writes those attributes onto `<html>`
+  whenever it switches.
+- **Reduced motion**: the BG provider's `prefersReducedMotion()` short-circuit
+  swaps backgrounds instantly. The Lanyard section also has a `reduced` branch
+  that renders a static placeholder when the user prefers reduced motion.
+
+### Adding content
+- **New project**: append to `src/content/projects.ts`. Drop
+  `public/projects/<slug>/hero.png` (other `feature-N.jpg` are optional;
+  missing ones get a "Screenshot coming soon" panel automatically).
+- **New language**: extend the `resources` map in `src/i18n/index.ts` and
+  every `Localized` field in `src/content/projects.ts` /
+  `src/content/about.ts`. Add the new locale to `supportedLngs`.
+- **New dependency in Credits**: add an entry to the right category in
+  `src/content/credits.ts`. Special thanks: add a `ThanksEntry` to
+  `specialThanks` plus a `credits.thanks.<key>` block in both `zh` and `en`
+  i18n resources.
+
+### Common gotchas
+- **`SocialSection.tsx` doesn't exist.** It used to (early-draft Social grid
+  with ChromaGrid / GlassIcons). When Codex condensed sections, it was removed
+  and the contact methods folded into ContactSection. If Vite's HMR ever
+  references it in an error, it's a stale cache key — a hard reload clears it.
+- **`SiteDock` and `Footer` no longer mount.** They live in
+  `src/components/layout/` but Codex stopped importing them from `App.tsx` /
+  `HomePage.tsx`. The files are kept in case someone wants to revive them.
+- **Menu link styling.** The Credits styling pattern in `globals.css`
+  (`:is(.sm-scope) .sm-panel-item[href='/...']`) is the prescribed way to
+  demote any menu item — StaggeredMenu does not accept per-item classes, and
+  you'll fight its inline `<style>` block on specificity if you forget the
+  prefix.
 - **Dev preview gotcha.** The headless browser used for in-loop verification
-  throttles rAF when WebGL backgrounds are active. Screenshots can time out and
-  CSS transitions may appear stuck at `currentTime: 0` — this is a tooling
-  artefact, not a production bug. Trust DOM `eval` results for state checks;
-  trust the user's real-browser screenshots for visual verification.
+  (Claude Preview / Codex's preview) throttles rAF hard when WebGL backgrounds
+  are active. Screenshots can time out and CSS transitions may appear stuck
+  at `currentTime: 0` — this is a tooling artefact, not a production bug.
+  Trust DOM `eval` results for state checks; trust the user's real-browser
+  screenshots for visual verification.
+- **`base: '/'` in vite.config**. Works because the site is served from a
+  custom domain root (`cohenjikan.com`). If the next contributor ever needs
+  to serve from `cohenjikan.github.io/Cohenjikan-s-web/`, change `base` to
+  `/Cohenjikan-s-web/` or asset paths will 404.
+
+### Deploy
+- `git push origin main` triggers `.github/workflows/deploy.yml`. It builds
+  `dist/` with `npm ci && npm run build`, uploads via
+  `actions/upload-pages-artifact@v3`, and publishes via
+  `actions/deploy-pages@v4`. Custom domain is preserved through
+  `public/CNAME` which gets copied into `dist/CNAME` at build time.
+- **First-time GitHub settings (only if Source isn't already `GitHub Actions`)**:
+  - Settings → Pages → Build and deployment → Source: `GitHub Actions`.
+  - Settings → Pages → Custom domain: `cohenjikan.com` (already set as of
+    2026-05-16).
+  - Enforce HTTPS: tick it once GH has issued the cert.
+- **DNS**: apex A records → `185.199.108.153`, `185.199.109.153`,
+  `185.199.110.153`, `185.199.111.153`. `www` CNAME →
+  `cohenjikan.github.io` (optional). These were already in place from the
+  legacy site as of 2026-05-16.
