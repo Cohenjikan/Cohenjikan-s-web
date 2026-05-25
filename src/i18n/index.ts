@@ -7,6 +7,7 @@ const resources = {
     translation: {
       nav: {
         about: 'about',
+        services: 'services',
         projects: 'projects',
         social: 'social',
         contact: 'contact'
@@ -18,10 +19,17 @@ const resources = {
       },
       section: {
         about: 'About',
+        services: 'Services',
         projects: 'Projects',
         social: 'Social',
         contact: 'Contact',
         credits: 'Credits'
+      },
+      services: {
+        intro: '业余顺手做的几样副业 · 点开看详情 · 数据全程本地处理',
+        inquire: '聊聊定制 →',
+        outro: '想做的都可以聊 · 邮件直达 q63725959@gmail.com',
+        cta: '聊聊定制'
       },
       project: {
         viewDetails: '查看详情',
@@ -73,6 +81,7 @@ const resources = {
     translation: {
       nav: {
         about: 'about',
+        services: 'services',
         projects: 'projects',
         social: 'social',
         contact: 'contact'
@@ -84,10 +93,17 @@ const resources = {
       },
       section: {
         about: 'About',
+        services: 'Services',
         projects: 'Projects',
         social: 'Social',
         contact: 'Contact',
         credits: 'Credits'
+      },
+      services: {
+        intro: 'A handful of side projects I run for fun · click a row for details · everything runs on-device',
+        inquire: 'Chat about it →',
+        outro: 'Open to bespoke work · drop a line at q63725959@gmail.com',
+        cta: 'Chat about it'
       },
       project: {
         viewDetails: 'View Details',

@@ -15,6 +15,7 @@ export const SiteNav = () => {
 
   const items = [
     { label: 'Home', ariaLabel: 'Home', link: '/#hero' },
+    { label: t('section.services'), ariaLabel: t('section.services'), link: '/#services' },
     { label: t('section.projects'), ariaLabel: t('section.projects'), link: '/#projects' },
     { label: t('section.contact'), ariaLabel: t('section.contact'), link: '/#contact' },
     { label: t('section.credits'), ariaLabel: t('section.credits'), link: '/credits' }

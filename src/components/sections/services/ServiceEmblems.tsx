@@ -1,0 +1,104 @@
+// Lightweight geometric emblems for each service row — sized at 40px and stroked
+// with the accent palette. Keeping them as inline SVG (no external assets) so they
+// inherit currentColor and react instantly to theme switches.
+import type { SVGProps } from 'react';
+
+export type EmblemId = 'echo' | 'chronicle' | 'fortune' | 'continuum' | 'archive';
+
+interface EmblemProps extends SVGProps<SVGSVGElement> {
+  size?: number;
+}
+
+const base = (size: number, extra?: string) => ({
+  width: size,
+  height: size,
+  viewBox: '0 0 48 48',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.4,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  className: extra
+});
+
+// Echo — concentric ripple rings + center dot. Reads as "broadcast / interaction".
+const EchoEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    <circle cx="24" cy="24" r="3.5" fill="currentColor" stroke="none" />
+    <circle cx="24" cy="24" r="8" opacity="0.85" />
+    <circle cx="24" cy="24" r="14" opacity="0.55" />
+    <circle cx="24" cy="24" r="20" opacity="0.28" />
+  </svg>
+);
+
+// Chronicle — flowing line of varying heights with a single highlighted peak.
+// Mirrors the 时光长河 mockup at icon scale.
+const ChronicleEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    <polyline
+      points="6,32 10,28 13,30 16,22 19,26 22,18 25,12 28,20 31,26 34,21 37,28 41,30"
+      opacity="0.9"
+    />
+    <circle cx="25" cy="12" r="2" fill="currentColor" stroke="none" />
+    <line x1="6" y1="38" x2="42" y2="38" opacity="0.35" />
+  </svg>
+);
+
+// Tides of Fortune — zodiac-style ring with 12 tick marks + a single transit dot.
+const FortuneEmblem = ({ size = 40, className, ...rest }: EmblemProps) => {
+  const ticks = Array.from({ length: 12 }).map((_, i) => {
+    const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+    const x1 = 24 + Math.cos(a) * 18;
+    const y1 = 24 + Math.sin(a) * 18;
+    const x2 = 24 + Math.cos(a) * (i % 3 === 0 ? 14 : 16);
+    const y2 = 24 + Math.sin(a) * (i % 3 === 0 ? 14 : 16);
+    return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} opacity={i % 3 === 0 ? 0.9 : 0.45} />;
+  });
+  return (
+    <svg {...base(size, className)} {...rest}>
+      <circle cx="24" cy="24" r="20" opacity="0.6" />
+      <circle cx="24" cy="24" r="11" opacity="0.35" />
+      {ticks}
+      {/* transit marker */}
+      <circle cx={24 + Math.cos(-Math.PI / 3) * 20} cy={24 + Math.sin(-Math.PI / 3) * 20} r="1.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+};
+
+// Continuum — two overlapping speech bubbles with a tiny spark, hinting at
+// "two voices sharing one mind".
+const ContinuumEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    {/* outer bubble */}
+    <path d="M9 14 a4 4 0 0 1 4 -4 h17 a4 4 0 0 1 4 4 v9 a4 4 0 0 1 -4 4 h-3 l-4 4 v-4 h-10 a4 4 0 0 1 -4 -4 z" opacity="0.85" />
+    {/* inner bubble */}
+    <path d="M19 24 a3 3 0 0 1 3 -3 h13 a3 3 0 0 1 3 3 v7 a3 3 0 0 1 -3 3 h-7 l-3 3 v-3 h-3 a3 3 0 0 1 -3 -3 z" opacity="0.5" />
+    {/* spark */}
+    <path d="M30 18 l1.4 -2.8 l1.4 2.8 l2.8 1.4 l-2.8 1.4 l-1.4 2.8 l-1.4 -2.8 l-2.8 -1.4 z" opacity="0.95" />
+  </svg>
+);
+
+// Archive — three stacked cards with a small magnifier, reading as "search + file".
+const ArchiveEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    <rect x="8" y="14" width="22" height="6" rx="1.5" opacity="0.45" />
+    <rect x="8" y="22" width="22" height="6" rx="1.5" opacity="0.7" />
+    <rect x="8" y="30" width="22" height="6" rx="1.5" opacity="0.95" />
+    {/* magnifier */}
+    <circle cx="35" cy="34" r="5" />
+    <line x1="38.7" y1="37.5" x2="42" y2="41" />
+  </svg>
+);
+
+const REGISTRY: Record<EmblemId, (p: EmblemProps) => JSX.Element> = {
+  echo: EchoEmblem,
+  chronicle: ChronicleEmblem,
+  fortune: FortuneEmblem,
+  continuum: ContinuumEmblem,
+  archive: ArchiveEmblem
+};
+
+export const ServiceEmblem = ({ id, ...rest }: { id: EmblemId } & EmblemProps) => {
+  const C = REGISTRY[id];
+  return <C {...rest} />;
+};
