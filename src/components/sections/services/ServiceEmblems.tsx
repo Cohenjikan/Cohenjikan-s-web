@@ -3,7 +3,16 @@
 // inherit currentColor and react instantly to theme switches.
 import type { SVGProps } from 'react';
 
-export type EmblemId = 'echo' | 'chronicle' | 'fortune' | 'continuum' | 'archive';
+export type EmblemId =
+  | 'echo'
+  | 'chronicle'
+  | 'fortune'
+  | 'continuum'
+  | 'archive'
+  | 'relay'
+  | 'bazi'
+  | 'psyche'
+  | 'suite';
 
 interface EmblemProps extends SVGProps<SVGSVGElement> {
   size?: number;
@@ -90,12 +99,80 @@ const ArchiveEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
   </svg>
 );
 
+// Relay (ai) — a central hub dot fanning out to three model nodes. Reads as
+// "one endpoint, routed to many models".
+const RelayEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    {/* incoming request node */}
+    <circle cx="9" cy="24" r="2.4" fill="currentColor" stroke="none" />
+    {/* central relay hub */}
+    <circle cx="22" cy="24" r="4.5" opacity="0.9" />
+    <line x1="11.4" y1="24" x2="17.5" y2="24" opacity="0.8" />
+    {/* fan-out to three model nodes */}
+    <line x1="26.5" y1="24" x2="38" y2="13" opacity="0.55" />
+    <line x1="26.5" y1="24" x2="38" y2="24" opacity="0.7" />
+    <line x1="26.5" y1="24" x2="38" y2="35" opacity="0.55" />
+    <circle cx="40" cy="13" r="2.2" fill="currentColor" stroke="none" opacity="0.85" />
+    <circle cx="41" cy="24" r="2.2" fill="currentColor" stroke="none" />
+    <circle cx="40" cy="35" r="2.2" fill="currentColor" stroke="none" opacity="0.85" />
+  </svg>
+);
+
+// Bazi (ming) — a single 卦 trigram (three lines, middle broken) inside a ring.
+// The most legible shorthand for 命理 / 八卦 at icon scale.
+const BaziEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    <circle cx="24" cy="24" r="19" opacity="0.5" />
+    {/* top — solid (yang) */}
+    <line x1="14" y1="17" x2="34" y2="17" />
+    {/* middle — broken (yin) */}
+    <line x1="14" y1="24" x2="21" y2="24" />
+    <line x1="27" y1="24" x2="34" y2="24" />
+    {/* bottom — solid (yang) */}
+    <line x1="14" y1="31" x2="34" y2="31" />
+  </svg>
+);
+
+// Psyche (for) — a pentagon radar outline with spokes + a small plotted point,
+// mirroring the personality-radar demo.
+const PsycheEmblem = ({ size = 40, className, ...rest }: EmblemProps) => {
+  const pts = Array.from({ length: 5 }).map((_, i) => {
+    const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    return [24 + Math.cos(a) * 17, 24 + Math.sin(a) * 17];
+  });
+  const poly = pts.map((p) => p.join(',')).join(' ');
+  return (
+    <svg {...base(size, className)} {...rest}>
+      <polygon points={poly} opacity="0.6" />
+      {pts.map(([x, y], i) => (
+        <line key={i} x1="24" y1="24" x2={x} y2={y} opacity="0.3" />
+      ))}
+      {/* a plotted sample profile */}
+      <polygon points="24,12 38,21 32,36 16,34 11,20" opacity="0.85" />
+    </svg>
+  );
+};
+
+// Suite (group) — a small 2×2 stack of rounded tiles, reading as "a collection".
+const SuiteEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    <rect x="11" y="11" width="11" height="11" rx="2" opacity="0.95" />
+    <rect x="26" y="11" width="11" height="11" rx="2" opacity="0.6" />
+    <rect x="11" y="26" width="11" height="11" rx="2" opacity="0.6" />
+    <rect x="26" y="26" width="11" height="11" rx="2" opacity="0.35" />
+  </svg>
+);
+
 const REGISTRY: Record<EmblemId, (p: EmblemProps) => JSX.Element> = {
   echo: EchoEmblem,
   chronicle: ChronicleEmblem,
   fortune: FortuneEmblem,
   continuum: ContinuumEmblem,
-  archive: ArchiveEmblem
+  archive: ArchiveEmblem,
+  relay: RelayEmblem,
+  bazi: BaziEmblem,
+  psyche: PsycheEmblem,
+  suite: SuiteEmblem
 };
 
 export const ServiceEmblem = ({ id, ...rest }: { id: EmblemId } & EmblemProps) => {
