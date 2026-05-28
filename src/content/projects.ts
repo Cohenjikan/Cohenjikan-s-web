@@ -151,6 +151,48 @@ export const projects: ProjectDetail[] = [
       }
     ],
     techStack: ['WebRTC', 'TypeScript', 'Node.js', 'Docker']
+  },
+  {
+    slug: 'claude-usage-monitor',
+    name: 'Claude Usage Monitor',
+    tagline: {
+      zh: '常驻任务栏的 Claude Code 用量监视器,5h/周配额 + 分项目花费一眼看清。',
+      en: 'A taskbar-resident Claude Code usage monitor — 5h/weekly quota and per-project cost at a glance.'
+    },
+    description: {
+      zh: '面向 Claude Code Pro / Max 订阅者的轻量 Windows 桌面监视器:实时显示 5 小时与每周配额、按项目折算的等效 API 花费,以及一条常驻任务栏的迷你条。复用 Claude Code 自带的 OAuth 令牌,无需单独登录。',
+      en: 'A lightweight Windows desktop monitor for Claude Code Pro / Max subscribers: real-time 5-hour & weekly quota, per-project equivalent-API cost, and an always-visible mini taskbar strip. Piggybacks on Claude Code’s own OAuth token — no separate login.'
+    },
+    tags: ['Python', 'Windows', 'Desktop', 'Open Source'],
+    githubUrl: 'https://github.com/Cohenjikan/ClaudeUsageMoniter',
+    heroImage: '/projects/claude-usage-monitor/hero.png',
+    features: [
+      {
+        title: { zh: '配额实时监控', en: 'Live quota tracking' },
+        description: {
+          zh: '5 小时滚动窗口与每周配额实时刷新,跨越 75% / 90% / 95% 阈值时弹出 Windows 通知。',
+          en: 'Real-time 5-hour rolling window and weekly quota, with Windows notifications when usage crosses 75% / 90% / 95%.'
+        },
+        image: '/projects/claude-usage-monitor/feature-1.jpg'
+      },
+      {
+        title: { zh: '分项目花费', en: 'Per-project cost' },
+        description: {
+          zh: '解析本地 JSONL 记录,把每个项目的用量折算成等效 API 花费,会话 / 今日 / 本月一并汇总。',
+          en: 'Parses local JSONL logs to compute each project’s equivalent-API cost, rolled up by session / today / month.'
+        },
+        image: '/projects/claude-usage-monitor/feature-2.jpg'
+      },
+      {
+        title: { zh: '任务栏迷你条', en: 'Taskbar mini strip' },
+        description: {
+          zh: '无边框迷你条常驻任务栏、可拖动并记忆位置,另有浮动详情窗与系统托盘两种模式。',
+          en: 'A borderless, drag-to-reposition strip lives in the taskbar (position remembered), plus a floating detail window and system-tray mode.'
+        },
+        image: '/projects/claude-usage-monitor/feature-3.jpg'
+      }
+    ],
+    techStack: ['Python', 'tkinter', 'pystray', 'Pillow', 'winotify']
   }
 ];
 

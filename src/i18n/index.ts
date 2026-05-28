@@ -28,6 +28,7 @@ const resources = {
       services: {
         intro: '业余顺手做的几样副业 · 点开看详情 · 数据全程本地处理',
         inquire: '聊聊定制 →',
+        visit: '访问网站',
         outro: '想做的都可以聊 · 邮件直达 q63725959@gmail.com',
         cta: '聊聊定制'
       },
@@ -102,6 +103,7 @@ const resources = {
       services: {
         intro: 'A handful of side projects I run for fun · click a row for details · everything runs on-device',
         inquire: 'Chat about it →',
+        visit: 'Visit site',
         outro: 'Open to bespoke work · drop a line at q63725959@gmail.com',
         cta: 'Chat about it'
       },

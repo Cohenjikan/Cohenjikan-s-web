@@ -3,7 +3,15 @@ import type { EmblemId } from '../components/sections/services/ServiceEmblems';
 
 export type { Locale };
 
-export type DemoId = 'echo' | 'chronicle' | 'fortune' | 'continuum' | 'archive';
+export type DemoId =
+  | 'echo'
+  | 'chronicle'
+  | 'fortune'
+  | 'continuum'
+  | 'archive'
+  | 'relay'
+  | 'bazi'
+  | 'psyche';
 
 export interface ServiceItem {
   slug: string;
@@ -27,6 +35,12 @@ export interface ServiceItem {
   sampleImage: string | null;
   /** Hover/expand accent color (rgba). Sampled from the source mockup palette. */
   accentRgba: `rgba(${number}, ${number}, ${number}, ${number})`;
+  /**
+   * Live deployment URL. Present only for the shipped subdomain products
+   * (ai / ming / for); when set, the expanded drawer shows a "visit site" button.
+   * The older side-projects are demo + inquiry only, so they leave this undefined.
+   */
+  visitUrl?: string;
 }
 
 // Five small side-projects ("做着玩的副业"). Each row collapses by default; on
@@ -123,5 +137,100 @@ export const services: ServiceItem[] = [
     demo: 'archive',
     sampleImage: '/services/archive.png',
     accentRgba: 'rgba(232, 200, 170, 0.55)'
+  },
+  // ── Shipped subdomain products (ai / ming / for) ──────────────────────────
+  {
+    slug: 'ai',
+    name: 'AI Relay',
+    subtitle: { zh: 'API 中转站 · 多模型聚合', en: 'API Relay Station' },
+    tagline: {
+      zh: '一个 API 中转站:Claude / ChatGPT / DeepSeek 一站接入,支持 API 分发,直连最新 Opus 4.7、GPT-5.5、DeepSeek V4 Pro 与 Image2。',
+      en: 'An API relay: Claude / ChatGPT / DeepSeek behind one endpoint, API reselling supported, with the latest Opus 4.7, GPT-5.5, DeepSeek V4 Pro and Image2.'
+    },
+    features: {
+      zh: ['Claude · ChatGPT · DeepSeek 一键聚合', '支持 API 分发 / 二次售卖', '直连 Opus 4.7 · GPT-5.5 · DeepSeek V4 Pro · Image2'],
+      en: ['Claude · ChatGPT · DeepSeek under one key', 'API reselling / distribution', 'Direct: Opus 4.7 · GPT-5.5 · DeepSeek V4 Pro · Image2']
+    },
+    tags: ['API Gateway', 'Multi-model', 'Reseller'],
+    emblem: 'relay',
+    demo: 'relay',
+    sampleImage: null, // live site replaces the static sample
+    accentRgba: 'rgba(96, 165, 250, 0.55)',
+    visitUrl: 'https://ai.cohenjikan.com'
+  },
+  {
+    slug: 'ming',
+    name: 'Ming',
+    subtitle: { zh: '自动算命 · 命理推演', en: 'Auto Fortune-Telling' },
+    tagline: {
+      zh: '自动算命的命理学网站:融合生辰八字、五行、八卦、星盘、星座与塔罗牌,一次输入生成完整命理画像。',
+      en: 'An auto fortune-telling site blending Bazi, Wu Xing, the Eight Trigrams, natal charts, zodiac and tarot into one complete reading.'
+    },
+    features: {
+      zh: ['生辰八字 · 五行 · 八卦排盘', '星盘 / 星座 / 塔罗牌综合', '一次输入 · 全自动出报告'],
+      en: ['Bazi · Wu Xing · Eight Trigrams', 'Natal chart / zodiac / tarot combined', 'One input · fully automatic report']
+    },
+    tags: ['Bazi', 'Astrology', 'Tarot'],
+    emblem: 'bazi',
+    demo: 'bazi',
+    sampleImage: null,
+    accentRgba: 'rgba(196, 160, 255, 0.55)',
+    visitUrl: 'https://ming.cohenjikan.com'
+  },
+  {
+    slug: 'for',
+    name: 'For',
+    subtitle: { zh: '心理学分析 · 人格画像', en: 'Psychology Analysis' },
+    tagline: {
+      zh: '一个心理学分析网站:基于五维人格模型,把性格倾向、情绪与行为模式翻译成可读的画像与建议。',
+      en: 'A psychology analysis site: a five-factor model turning personality, emotion and behavior patterns into a readable profile with guidance.'
+    },
+    features: {
+      zh: ['五维人格雷达画像', '情绪与行为模式解读', '可读结论 + 个性化建议'],
+      en: ['Five-factor personality radar', 'Emotion & behavior pattern read-out', 'Readable conclusions + tailored advice']
+    },
+    tags: ['Psychology', 'Profiling', 'Insight'],
+    emblem: 'psyche',
+    demo: 'psyche',
+    sampleImage: null,
+    accentRgba: 'rgba(165, 180, 252, 0.55)',
+    visitUrl: 'https://for.cohenjikan.com'
   }
 ];
+
+// ── Section layout ──────────────────────────────────────────────────────────
+// The Services list is a two-level fold. Top level is the order the owner asked
+// for: ai → (the older chat-record suite, collapsed into one group) → ming → for.
+// A 'group' entry expands to reveal its child rows; each child then expands to its
+// own demo — hence "二级折叠" (two levels of folding).
+export type ServiceEntry =
+  | { kind: 'item'; slug: string }
+  | {
+      kind: 'group';
+      id: string;
+      title: Localized;
+      subtitle: Localized;
+      emblem: EmblemId;
+      accentRgba: `rgba(${number}, ${number}, ${number}, ${number})`;
+      children: string[];
+    };
+
+export const serviceLayout: ServiceEntry[] = [
+  { kind: 'item', slug: 'ai' },
+  {
+    kind: 'group',
+    id: 'chat-suite',
+    title: { zh: '聊天记录系列', en: 'Chat-Record Suite' },
+    subtitle: { zh: 'QQ · 微信 · 朋友圈 · 既有副业', en: 'QQ · WeChat · Moments · earlier projects' },
+    emblem: 'suite',
+    accentRgba: 'rgba(167, 139, 250, 0.5)',
+    children: ['echo', 'chronicle', 'fortune', 'continuum', 'archive']
+  },
+  { kind: 'item', slug: 'ming' },
+  { kind: 'item', slug: 'for' }
+];
+
+/** slug → ServiceItem, for the layout renderer to resolve entries. */
+export const serviceBySlug: Record<string, ServiceItem> = Object.fromEntries(
+  services.map((s) => [s.slug, s])
+);
