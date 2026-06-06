@@ -35,6 +35,25 @@ const SmartImage = ({
   );
 };
 
+const GithubIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+  </svg>
+);
+
+const repoBtnClass =
+  'inline-flex items-center gap-2 rounded-lg border border-white/10 bg-surface/40 px-5 py-3 text-sm text-text transition-colors hover:border-accent/40 hover:text-accent';
+
 export const ProjectDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t, i18n } = useTranslation();
@@ -71,17 +90,25 @@ export const ProjectDetailPage = () => {
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href={project.githubUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-surface/40 px-5 py-3 text-sm text-text transition-colors hover:border-accent/40 hover:text-accent"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-            </svg>
-            {t('project.github')}
-          </a>
+          {project.repos
+            ? project.repos.map((repo) => (
+                <a
+                  key={repo.url}
+                  href={repo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={repoBtnClass}
+                >
+                  <GithubIcon />
+                  {repo.label[locale]}
+                </a>
+              ))
+            : project.githubUrl && (
+                <a href={project.githubUrl} target="_blank" rel="noreferrer" className={repoBtnClass}>
+                  <GithubIcon />
+                  {t('project.github')}
+                </a>
+              )}
           {project.liveUrl && (
             <StarBorder
               as="a"
