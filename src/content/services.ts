@@ -41,6 +41,11 @@ export interface ServiceItem {
    * The older side-projects are demo + inquiry only, so they leave this undefined.
    */
   visitUrl?: string;
+  /**
+   * Marks a 整蛊 / prank product: renders a "整蛊" badge on the collapsed row, and the
+   * whole entry is hidden when the UI is in English (the gag only lands in Chinese).
+   */
+  prank?: boolean;
 }
 
 // Five small side-projects ("做着玩的副业"). Each row collapses by default; on
@@ -194,7 +199,8 @@ export const services: ServiceItem[] = [
     demo: 'psyche',
     sampleImage: null,
     accentRgba: 'rgba(165, 180, 252, 0.55)',
-    visitUrl: 'https://for.cohenjikan.com'
+    visitUrl: 'https://for.cohenjikan.com',
+    prank: true
   }
 ];
 

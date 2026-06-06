@@ -84,6 +84,12 @@ const ServiceRow = ({ s, isOpen, onToggle, onOpenLightbox, onInquire, locale }: 
           <span className="mt-1 block text-xs text-muted sm:hidden">{s.subtitle[locale]}</span>
         </span>
 
+        {s.prank && (
+          <span className="shrink-0 rounded border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 font-mono text-[10px] tracking-[0.12em] text-amber-300">
+            {locale === 'zh' ? '整蛊' : 'Prank'}
+          </span>
+        )}
+
         {s.visitUrl && (
           <span className="hidden shrink-0 rounded border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-emerald-300/90 sm:inline">
             live
@@ -199,6 +205,9 @@ export const ServicesSection = () => {
   const location = useLocation();
   const locale = (i18n.language.startsWith('zh') ? 'zh' : 'en') as Locale;
 
+  // A 整蛊 / prank product is hidden entirely when the UI is in English.
+  const isHidden = (s: ServiceItem) => locale === 'en' && Boolean(s.prank);
+
   // Which demo row is open. null = all collapsed. Only one open at a time so the
   // section stays compact — shared across top-level rows and nested children.
   const [openSlug, setOpenSlug] = useState<string | null>(null);
@@ -243,11 +252,15 @@ export const ServicesSection = () => {
         {serviceLayout.map((entry) => {
           if (entry.kind === 'item') {
             const s = serviceBySlug[entry.slug];
-            return s ? renderRow(s) : null;
+            return s && !isHidden(s) ? renderRow(s) : null;
           }
 
           // group entry — a fold that reveals its child rows
           const isGroupOpen = openGroup === entry.id;
+          const visibleChildren = entry.children
+            .map((slug) => serviceBySlug[slug])
+            .filter((s): s is ServiceItem => Boolean(s) && !isHidden(s));
+          if (visibleChildren.length === 0) return null;
           return (
             <li key={entry.id}>
               <button
@@ -276,7 +289,7 @@ export const ServicesSection = () => {
                 </span>
 
                 <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-muted">
-                  {entry.children.length}
+                  {visibleChildren.length}
                 </span>
 
                 <span
@@ -292,10 +305,7 @@ export const ServicesSection = () => {
                   id={`service-group-${entry.id}`}
                   className="animate-fade-in divide-y divide-white/5 border-t border-white/5 bg-black/25 pl-4 md:pl-6"
                 >
-                  {entry.children.map((slug) => {
-                    const s = serviceBySlug[slug];
-                    return s ? renderRow(s) : null;
-                  })}
+                  {visibleChildren.map((s) => renderRow(s))}
                 </ul>
               )}
             </li>
