@@ -11,7 +11,8 @@ export type DemoId =
   | 'archive'
   | 'relay'
   | 'bazi'
-  | 'psyche';
+  | 'psyche'
+  | 'poetry';
 
 export interface ServiceItem {
   slug: string;
@@ -52,6 +53,25 @@ export interface ServiceItem {
 // expand it shows a scripted demo of the deliverable, plus one click-to-zoom
 // screenshot of the actual artifact (except Continuum, which is demo-only).
 export const services: ServiceItem[] = [
+  {
+    slug: 'shiyun',
+    name: 'Poetry Cloud',
+    subtitle: { zh: '诗云 · 一切可能的诗', en: 'Every Possible Poem' },
+    tagline: {
+      zh: '一张可飞行的三维诗歌星图:每位诗人是一团真实星,星团之间的虚空是一切可能的近体诗。点一下虚空,就用「编号↔诗」的双射当场算出一首,地址长达 82–229 位——诗不被储存,给个编号就能算出第几首。',
+      en: 'A roamable 3D star map of poetry: each poet a cluster of real stars, the void between them every possible regulated-verse poem. Click the void and an index↔poem bijection computes one on the spot — an 82–229-digit address, no poem ever stored.'
+    },
+    features: {
+      zh: ['全朝代诗人星团 · 可飞行 / 按朝代筛选', '点虚空 unrank 出诗 + 完整长编号', '赠诗网络 4,849 弧 · 逐句搜索 / 编号反查'],
+      en: ['All-dynasty poet clusters — fly & filter', 'Click the void → a poem + its full long index', '4,849 dedication arcs · search by line / reverse a number']
+    },
+    tags: ['three.js', 'WebGL', 'Generative'],
+    emblem: 'poetry',
+    demo: 'poetry',
+    sampleImage: '/services/shiyun.jpg',
+    accentRgba: 'rgba(94, 234, 212, 0.5)',
+    visitUrl: 'https://shiyun.cohenjikan.com'
+  },
   {
     slug: 'echo',
     name: 'Echo',
@@ -206,7 +226,7 @@ export const services: ServiceItem[] = [
 
 // ── Section layout ──────────────────────────────────────────────────────────
 // The Services list is a two-level fold. Top level is the order the owner asked
-// for: ai → (the older chat-record suite, collapsed into one group) → ming → for.
+// for: shiyun → ai → (the older chat-record suite, collapsed into one group) → ming → for.
 // A 'group' entry expands to reveal its child rows; each child then expands to its
 // own demo — hence "二级折叠" (two levels of folding).
 export type ServiceEntry =
@@ -222,6 +242,7 @@ export type ServiceEntry =
     };
 
 export const serviceLayout: ServiceEntry[] = [
+  { kind: 'item', slug: 'shiyun' },
   { kind: 'item', slug: 'ai' },
   {
     kind: 'group',

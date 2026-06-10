@@ -12,6 +12,7 @@ export type EmblemId =
   | 'relay'
   | 'bazi'
   | 'psyche'
+  | 'poetry'
   | 'suite';
 
 interface EmblemProps extends SVGProps<SVGSVGElement> {
@@ -153,6 +154,32 @@ const PsycheEmblem = ({ size = 40, className, ...rest }: EmblemProps) => {
   );
 };
 
+// Poetry (诗云) — a luminous galactic core (4-point sparkle) ringed by a faint
+// dynastic shell, with scattered "real-poem" stars wired by dedication arcs.
+const PoetryEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
+  <svg {...base(size, className)} {...rest}>
+    {/* faint outer shell — a dynasty ring */}
+    <circle cx="24" cy="24" r="19" opacity="0.22" />
+    {/* dedication arcs threading the core to outer stars */}
+    <polyline points="11,13 24,24 39,15" opacity="0.3" />
+    <polyline points="13,37 24,24 38,34" opacity="0.3" />
+    {/* scattered real-poem stars */}
+    <circle cx="11" cy="13" r="1.5" fill="currentColor" stroke="none" opacity="0.85" />
+    <circle cx="39" cy="15" r="1.3" fill="currentColor" stroke="none" opacity="0.7" />
+    <circle cx="13" cy="37" r="1.4" fill="currentColor" stroke="none" opacity="0.7" />
+    <circle cx="38" cy="34" r="1.6" fill="currentColor" stroke="none" opacity="0.85" />
+    <circle cx="33" cy="9" r="1" fill="currentColor" stroke="none" opacity="0.5" />
+    <circle cx="9" cy="27" r="1" fill="currentColor" stroke="none" opacity="0.5" />
+    {/* bright galactic core — 4-point sparkle */}
+    <path
+      d="M24 14 L25.8 22.2 L34 24 L25.8 25.8 L24 34 L22.2 25.8 L14 24 L22.2 22.2 Z"
+      fill="currentColor"
+      stroke="none"
+      opacity="0.95"
+    />
+  </svg>
+);
+
 // Suite (group) — a small 2×2 stack of rounded tiles, reading as "a collection".
 const SuiteEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
   <svg {...base(size, className)} {...rest}>
@@ -172,6 +199,7 @@ const REGISTRY: Record<EmblemId, (p: EmblemProps) => JSX.Element> = {
   relay: RelayEmblem,
   bazi: BaziEmblem,
   psyche: PsycheEmblem,
+  poetry: PoetryEmblem,
   suite: SuiteEmblem
 };
 

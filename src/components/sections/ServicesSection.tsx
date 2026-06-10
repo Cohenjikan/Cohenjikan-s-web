@@ -18,6 +18,7 @@ import { ArchiveDemo } from './services/ArchiveDemo';
 import { RelayDemo } from './services/RelayDemo';
 import { BaziDemo } from './services/BaziDemo';
 import { PsycheDemo } from './services/PsycheDemo';
+import { PoetryCloudDemo } from './services/PoetryCloudDemo';
 import { ImageLightbox } from './services/ImageLightbox';
 
 // Services sits between About and Projects in the page rhythm, but its visual
@@ -40,7 +41,8 @@ const DEMO_REGISTRY: Record<DemoId, () => JSX.Element> = {
   archive: ArchiveDemo,
   relay: RelayDemo,
   bazi: BaziDemo,
-  psyche: PsycheDemo
+  psyche: PsycheDemo,
+  poetry: PoetryCloudDemo
 };
 
 interface RowProps {

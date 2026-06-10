@@ -37,6 +37,56 @@ export interface ProjectDetail {
 
 export const projects: ProjectDetail[] = [
   {
+    slug: 'poetry-cloud',
+    name: '诗云 · Poetry Cloud',
+    tagline: {
+      zh: '一张可飞行的三维诗歌星图:每位诗人是一团真实星,星团之间的虚空是一切可能的近体诗。点一下,就从噪声里算出一首诗。',
+      en: 'A roamable 3D star map of poetry — each poet a cluster of real stars, the void between them every possible regulated-verse poem. Click, and one is computed out of the noise.'
+    },
+    description: {
+      zh: '诗云(Poetry Cloud)是一张可在其中飞行的三维星图:每位历史诗人是一团他真实写过的诗组成的星,星团之间的虚空则是「一切可能的近体诗」。诗不被储存——给一个编号,就能用「编号↔诗」的双射当场算出第几首诗,反之亦然;地址长达 82–229 位,几乎和诗本身一样长(目录即图书馆)。收录 32,657 位诗人 / 933,857 首真实诗作,先秦到当代 15 个朝代同心壳,并叠加现代新诗。全程纯静态,所有索引运算与渲染都在浏览器里完成,永不加后端。灵感来自刘慈欣《诗云》与博尔赫斯《巴别图书馆》。',
+      en: 'Poetry Cloud is a 3D star map you fly through: each historical poet is a cluster of stars they actually wrote, and the void between clusters is the space of every possible regulated-verse poem. Poems are never stored — an index↔poem bijection computes the N-th poem on the spot (and back), with an 82–229-digit address nearly as long as the poem itself (the catalog is the library). It indexes 32,657 real poets / 933,857 real poems across 15 dynastic shells from pre-Qin to today, plus a layer of modern free verse. Fully static — all the index math and rendering run client-side, with no backend ever. Inspired by Liu Cixin’s “Poetry Cloud” and Borges’ “Library of Babel”.'
+    },
+    tags: ['TypeScript', 'three.js', 'WebGL', 'Generative'],
+    liveUrl: 'https://shiyun.cohenjikan.com',
+    heroImage: '/projects/poetry-cloud/hero.jpg',
+    features: [
+      {
+        title: { zh: '飞行星图 · 诗人即星团', en: 'A star map you fly' },
+        description: {
+          zh: '先秦到当代 15 个朝代同心壳,每位诗人是一团他真实写过的诗;可自由飞行、按朝代筛选,而星团之间的虚空,就是一切可能的近体诗。',
+          en: 'Fifteen concentric dynastic shells from pre-Qin to today — each poet a cluster of poems they truly wrote. Fly freely and filter by dynasty; the void between clusters is every possible poem.'
+        },
+        image: '/projects/poetry-cloud/feature-1.jpg'
+      },
+      {
+        title: { zh: '点击虚空 · 从噪声里算出一首诗', en: 'Click the void, compute a poem' },
+        description: {
+          zh: '点一下虚空,就用「编号↔诗」双射从噪声里 unrank 出一首诗,并显示它在全集目录里那个 82–229 位的完整编号——地址几乎和诗本身一样长。',
+          en: 'Click empty space and a poem is unranked out of the noise via the index↔poem bijection, shown with its full 82–229-digit catalog address — nearly as long as the poem itself.'
+        },
+        image: '/projects/poetry-cloud/feature-2.jpg'
+      },
+      {
+        title: { zh: '赠诗网络 · 4,849 条赠答弧线', en: 'Dedication network' },
+        description: {
+          zh: '解析诗题(寄 / 赠 / 和 / 次韵)与约 250 条字号别名,连出 4,849 条诗人之间的赠答弧线,束状汇向银心;选中一位诗人,即勾出他往来的自我网络。',
+          en: 'Parsing poem titles (寄/赠/和/次韵) and ~250 courtesy-name aliases into 4,849 poet-to-poet dedication arcs, bundled toward the galactic core; select a poet to draw their ego-network.'
+        },
+        image: '/projects/poetry-cloud/feature-3.jpg'
+      },
+      {
+        title: { zh: '逐句搜索 · 编号反查', en: 'Search any line, reverse a number' },
+        description: {
+          zh: '输入任意一句(不限首句)即可定位它属于哪位诗人的哪首诗;也能把一串长编号 unrank 回它的诗,核验它是否对应一首真实存在的作品——目录↔诗的闭环。',
+          en: 'Type any line (not just openings) to find whose poem it belongs to; or unrank a long address back into its poem and verify whether it maps to a real work — the catalog↔poem loop, closed.'
+        },
+        image: '/projects/poetry-cloud/feature-4.jpg'
+      }
+    ],
+    techStack: ['TypeScript', 'three.js', 'React Three Fiber', 'BigInt', 'Vite']
+  },
+  {
     slug: 'music-master',
     name: 'MusicMaster',
     tagline: {
