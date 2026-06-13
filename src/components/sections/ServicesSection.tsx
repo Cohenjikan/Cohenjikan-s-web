@@ -17,7 +17,6 @@ import { FortuneDemo } from './services/FortuneDemo';
 import { ArchiveDemo } from './services/ArchiveDemo';
 import { RelayDemo } from './services/RelayDemo';
 import { BaziDemo } from './services/BaziDemo';
-import { PsycheDemo } from './services/PsycheDemo';
 import { PoetryCloudDemo } from './services/PoetryCloudDemo';
 import { ImageLightbox } from './services/ImageLightbox';
 
@@ -41,7 +40,6 @@ const DEMO_REGISTRY: Record<DemoId, () => JSX.Element> = {
   archive: ArchiveDemo,
   relay: RelayDemo,
   bazi: BaziDemo,
-  psyche: PsycheDemo,
   poetry: PoetryCloudDemo
 };
 

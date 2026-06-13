@@ -11,7 +11,6 @@ export type EmblemId =
   | 'archive'
   | 'relay'
   | 'bazi'
-  | 'psyche'
   | 'poetry'
   | 'suite';
 
@@ -134,26 +133,6 @@ const BaziEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
   </svg>
 );
 
-// Psyche (for) — a pentagon radar outline with spokes + a small plotted point,
-// mirroring the personality-radar demo.
-const PsycheEmblem = ({ size = 40, className, ...rest }: EmblemProps) => {
-  const pts = Array.from({ length: 5 }).map((_, i) => {
-    const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
-    return [24 + Math.cos(a) * 17, 24 + Math.sin(a) * 17];
-  });
-  const poly = pts.map((p) => p.join(',')).join(' ');
-  return (
-    <svg {...base(size, className)} {...rest}>
-      <polygon points={poly} opacity="0.6" />
-      {pts.map(([x, y], i) => (
-        <line key={i} x1="24" y1="24" x2={x} y2={y} opacity="0.3" />
-      ))}
-      {/* a plotted sample profile */}
-      <polygon points="24,12 38,21 32,36 16,34 11,20" opacity="0.85" />
-    </svg>
-  );
-};
-
 // Poetry (诗云) — a luminous galactic core (4-point sparkle) ringed by a faint
 // dynastic shell, with scattered "real-poem" stars wired by dedication arcs.
 const PoetryEmblem = ({ size = 40, className, ...rest }: EmblemProps) => (
@@ -198,7 +177,6 @@ const REGISTRY: Record<EmblemId, (p: EmblemProps) => JSX.Element> = {
   archive: ArchiveEmblem,
   relay: RelayEmblem,
   bazi: BaziEmblem,
-  psyche: PsycheEmblem,
   poetry: PoetryEmblem,
   suite: SuiteEmblem
 };

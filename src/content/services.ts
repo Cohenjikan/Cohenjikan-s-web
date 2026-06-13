@@ -11,7 +11,6 @@ export type DemoId =
   | 'archive'
   | 'relay'
   | 'bazi'
-  | 'psyche'
   | 'poetry';
 
 export interface ServiceItem {
@@ -201,32 +200,12 @@ export const services: ServiceItem[] = [
     sampleImage: null,
     accentRgba: 'rgba(196, 160, 255, 0.55)',
     visitUrl: 'https://ming.cohenjikan.com'
-  },
-  {
-    slug: 'for',
-    name: 'For',
-    subtitle: { zh: '心理学分析 · 人格画像', en: 'Psychology Analysis' },
-    tagline: {
-      zh: '一个心理学分析网站:基于五维人格模型,把性格倾向、情绪与行为模式翻译成可读的画像与建议。',
-      en: 'A psychology analysis site: a five-factor model turning personality, emotion and behavior patterns into a readable profile with guidance.'
-    },
-    features: {
-      zh: ['五维人格雷达画像', '情绪与行为模式解读', '可读结论 + 个性化建议'],
-      en: ['Five-factor personality radar', 'Emotion & behavior pattern read-out', 'Readable conclusions + tailored advice']
-    },
-    tags: ['Psychology', 'Profiling', 'Insight'],
-    emblem: 'psyche',
-    demo: 'psyche',
-    sampleImage: null,
-    accentRgba: 'rgba(165, 180, 252, 0.55)',
-    visitUrl: 'https://for.cohenjikan.com',
-    prank: true
   }
 ];
 
 // ── Section layout ──────────────────────────────────────────────────────────
 // The Services list is a two-level fold. Top level is the order the owner asked
-// for: shiyun → ai → (the older chat-record suite, collapsed into one group) → ming → for.
+// for: shiyun → ai → (the older chat-record suite, collapsed into one group) → ming.
 // A 'group' entry expands to reveal its child rows; each child then expands to its
 // own demo — hence "二级折叠" (two levels of folding).
 export type ServiceEntry =
@@ -253,8 +232,7 @@ export const serviceLayout: ServiceEntry[] = [
     accentRgba: 'rgba(167, 139, 250, 0.5)',
     children: ['echo', 'chronicle', 'fortune', 'continuum', 'archive']
   },
-  { kind: 'item', slug: 'ming' },
-  { kind: 'item', slug: 'for' }
+  { kind: 'item', slug: 'ming' }
 ];
 
 /** slug → ServiceItem, for the layout renderer to resolve entries. */
