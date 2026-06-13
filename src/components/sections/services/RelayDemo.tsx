@@ -23,29 +23,29 @@ interface Model {
 
 const MODELS: Model[] = [
   {
-    id: 'claude-opus-4.7',
-    label: 'Claude · Opus 4.7',
+    id: 'claude',
+    label: 'Claude',
     latency: '23ms',
     tokens: 1280,
     reply: { zh: '已中转 · 上下文已缓存', en: 'relayed · context cached' }
   },
   {
-    id: 'gpt-5.5',
-    label: 'OpenAI · GPT-5.5',
+    id: 'chatgpt',
+    label: 'ChatGPT',
     latency: '31ms',
     tokens: 1024,
-    reply: { zh: '流式响应 · 按量计费', en: 'streaming · metered billing' }
+    reply: { zh: '流式响应已建立', en: 'streaming established' }
   },
   {
-    id: 'deepseek-v4-pro',
-    label: 'DeepSeek · V4 Pro',
+    id: 'deepseek',
+    label: 'DeepSeek',
     latency: '19ms',
     tokens: 896,
     reply: { zh: '命中低延迟节点', en: 'low-latency node hit' }
   },
   {
-    id: 'image2',
-    label: 'Image2 · 绘图',
+    id: 'image',
+    label: '绘图 / Image',
     latency: '0.6s',
     tokens: 512,
     reply: { zh: '已生成 1024×1024 预览', en: 'rendered 1024×1024' }

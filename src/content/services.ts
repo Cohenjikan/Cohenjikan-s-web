@@ -37,10 +37,16 @@ export interface ServiceItem {
   accentRgba: `rgba(${number}, ${number}, ${number}, ${number})`;
   /**
    * Live deployment URL. Present only for the shipped subdomain products
-   * (ai / ming / for); when set, the expanded drawer shows a "visit site" button.
+   * (shiyun / ai / ming); when set, the expanded drawer shows a "visit site" button.
    * The older side-projects are demo + inquiry only, so they leave this undefined.
    */
   visitUrl?: string;
+  /**
+   * Optional compliance / entertainment-only notice, rendered as a distinct boxed
+   * line in the expanded drawer. Used where the framing needs an explicit legal or
+   * "for-fun only" caveat (e.g. persona modeling, fortune-telling).
+   */
+  disclaimer?: Localized;
   /**
    * Marks a 整蛊 / prank product: renders a "整蛊" badge on the collapsed row, and the
    * whole entry is hidden when the UI is in English (the gag only lands in Chinese).
@@ -129,20 +135,24 @@ export const services: ServiceItem[] = [
   {
     slug: 'continuum',
     name: 'Continuum',
-    subtitle: { zh: '人格模型 · 接入微信', en: 'Persona Model' },
+    subtitle: { zh: '人格模型 · 亲友留存', en: 'Persona Model' },
     tagline: {
-      zh: '用 ta 全部的对话和朋友圈训练一个本地模型,接入微信。语气、用词、说话节奏都保留 —— 数据全程不出本机。',
-      en: "Train a local model on someone's full chat & Moments history, then connect it back to WeChat. Tone, word choice and cadence preserved — data never leaves your machine."
+      zh: '用一个人全部的对话与朋友圈,在本地训练出贴近其语气、用词与说话节奏的人格模型,并可接入微信。留住一位亲人、挚友或爱人「说话的样子」—— 全程数据不出本机。',
+      en: "Train a local model on a person's full chat & Moments history — the tone, word choice and cadence of a family member, close friend or partner — and optionally connect it back to WeChat. Everything stays on your own machine."
     },
     features: {
-      zh: ['本地训练 · 数据不出机', '微信账号无缝接入', '可继续对话的「她 / 他」'],
-      en: ['Local-only training, data never leaves', 'Seamless WeChat integration', '"Her" / "him", still in conversation']
+      zh: ['本地训练 · 数据不出机', '可接入微信 / 也可纯离线使用', '留住亲人 · 挚友 · 爱人的语气'],
+      en: ['Local-only training, data never leaves', 'Optional WeChat link, or fully offline', 'Family, friends or partner — their voice, kept']
     },
-    tags: ['LLM', 'On-device', 'WeChat Bridge'],
+    tags: ['LLM', 'On-device', 'Keepsake'],
     emblem: 'continuum',
     demo: 'continuum',
     sampleImage: null, // no public artifact — the demo is the deliverable preview
-    accentRgba: 'rgba(167, 139, 250, 0.65)'
+    accentRgba: 'rgba(167, 139, 250, 0.65)',
+    disclaimer: {
+      zh: '声明:仅限使用本人,或经当事人 / 直系亲属明确授权的数据;请遵守《个人信息保护法》等当地法律法规及相应平台条款,严禁未经同意采集或冒用他人身份。',
+      en: 'Note: for your own data, or data you are explicitly authorized (by the person or immediate family) to use, only. Comply with local data-protection laws and platform terms; never collect or impersonate anyone without consent.'
+    }
   },
   {
     slug: 'archive',
@@ -166,16 +176,16 @@ export const services: ServiceItem[] = [
   {
     slug: 'ai',
     name: 'AI Relay',
-    subtitle: { zh: 'API 中转站 · 多模型聚合', en: 'API Relay Station' },
+    subtitle: { zh: 'API 中转 · 多模型聚合', en: 'API Relay' },
     tagline: {
-      zh: '一个 API 中转站:Claude / ChatGPT / DeepSeek 一站接入,支持 API 分发,直连最新 Opus 4.7、GPT-5.5、DeepSeek V4 Pro 与 Image2。',
-      en: 'An API relay: Claude / ChatGPT / DeepSeek behind one endpoint, API reselling supported, with the latest Opus 4.7, GPT-5.5, DeepSeek V4 Pro and Image2.'
+      zh: '把 Claude / ChatGPT / DeepSeek 聚合到一个自用接口的中转层:统一密钥、统一调用,按个人需求私下配置 —— 个人自用,不对外分发、不公开转售。',
+      en: 'A personal relay that puts Claude / ChatGPT / DeepSeek behind one endpoint for your own use — unified key and calls, privately configured. Personal use only; not distributed or resold.'
     },
     features: {
-      zh: ['Claude · ChatGPT · DeepSeek 一键聚合', '支持 API 分发 / 二次售卖', '直连 Opus 4.7 · GPT-5.5 · DeepSeek V4 Pro · Image2'],
-      en: ['Claude · ChatGPT · DeepSeek under one key', 'API reselling / distribution', 'Direct: Opus 4.7 · GPT-5.5 · DeepSeek V4 Pro · Image2']
+      zh: ['Claude · ChatGPT · DeepSeek 一站聚合', '统一密钥 · 个人自用配置', '私下接入 · 不公开分发'],
+      en: ['Claude · ChatGPT · DeepSeek, one endpoint', 'Unified key, personal configuration', 'Private use — not publicly distributed']
     },
-    tags: ['API Gateway', 'Multi-model', 'Reseller'],
+    tags: ['API Gateway', 'Multi-model', 'Personal'],
     emblem: 'relay',
     demo: 'relay',
     sampleImage: null, // live site replaces the static sample
@@ -199,7 +209,11 @@ export const services: ServiceItem[] = [
     demo: 'bazi',
     sampleImage: null,
     accentRgba: 'rgba(196, 160, 255, 0.55)',
-    visitUrl: 'https://ming.cohenjikan.com'
+    visitUrl: 'https://ming.cohenjikan.com',
+    disclaimer: {
+      zh: '声明:本站命理 / 塔罗内容仅供娱乐与文化体验,不构成任何决策依据。请崇尚科学、相信努力,自觉抵制封建迷信,并遵守当地法律法规。',
+      en: 'Note: the readings here are for entertainment and cultural curiosity only — not a basis for any decision. Respect science, value effort, reject superstition, and follow local laws.'
+    }
   }
 ];
 

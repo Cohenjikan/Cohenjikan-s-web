@@ -127,6 +127,13 @@ const ServiceRow = ({ s, isOpen, onToggle, onOpenLightbox, onInquire, locale }: 
             ))}
           </ul>
 
+          {s.disclaimer && (
+            <p className="mb-5 flex gap-2 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-200/85">
+              <span aria-hidden className="mt-px shrink-0">⚠</span>
+              <span>{s.disclaimer[locale]}</span>
+            </p>
+          )}
+
           <div className="mb-5 flex flex-wrap gap-2">
             {s.tags.map((tag) => (
               <span

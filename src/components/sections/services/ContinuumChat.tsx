@@ -35,8 +35,8 @@ const DIALOGUE = {
     u1: '在吗?',
     a1: '嗯,在的。',
     u2: '好像很久没说话了。',
-    a2: '那年夏天的海,我还记得。',
-    header: '她 · Continuum',
+    a2: '记得啊 —— 那些年的事,我都还记得。',
+    header: '亲友 · Continuum',
     status: '本地模型 · 在线',
     footer: '本地推理 · 数据不出本机'
   },
@@ -44,8 +44,8 @@ const DIALOGUE = {
     u1: 'You there?',
     a1: 'Mm — always.',
     u2: "It's been a while, hasn't it.",
-    a2: 'I still remember the sea, that summer.',
-    header: 'Her · Continuum',
+    a2: 'Of course — I still remember all those years.',
+    header: 'Someone close · Continuum',
     status: 'local model · online',
     footer: 'on-device inference · data never leaves'
   }
