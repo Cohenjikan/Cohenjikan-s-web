@@ -1,9 +1,3 @@
-node_modules
-dist
-dist-ssr
-.vite
-*.local
-*.tsbuildinfo
 .DS_Store
 .idea
 .vscode/*

@@ -1,0 +1,2178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ECEBEF">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="Cohen">
+<meta property="og:description" content="Developer and creator. Open-source tools for music, games, poetry and everyday life.">
+<meta property="og:image" content="https://cohenjikan.com/tex/shiyun.jpg">
+<meta property="og:url" content="https://cohenjikan.com/">
+<meta name="twitter:card" content="summary_large_image">
+<title>Cohen</title>
+<meta name="description" content="Cohen, developer and creator. Open-source tools for music, games, poetry and everyday life.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Funnel+Sans:wght@300..800&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: the work is the hero. Real project covers orbit the name on a tilted ring,
+   unroll into a cinematic reel at dusk, and each one opens into its own case page. */
+:root{
+  --fog:#ECEBEF;        /* page in daylight */
+  --ink:#131218;
+  --dusk:#0C0B10;       /* the reel and case pages */
+  --mist:#ECEAF3;       /* text at dusk */
+  --violet:#6A5AF9;     /* one accent, used sparingly */
+  --bg:var(--fog);
+  --fg:var(--ink);
+  --soft:color-mix(in oklab,var(--fg) 56%,var(--bg));
+  --line:color-mix(in oklab,var(--fg) 14%,transparent);
+  --f-display:"Funnel Display","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Funnel Sans","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --gutter:clamp(16px,3.6vw,56px);
+  --ease:cubic-bezier(.7,0,.2,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-stopped{overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55;overflow-x:clip;-webkit-font-smoothing:antialiased}
+::selection{background:var(--violet);color:#fff}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--violet);outline-offset:4px;border-radius:4px}
+.nw{white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pad{padding-inline:var(--gutter)}
+.label{font-family:var(--f-body);font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin:0}
+
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+main{position:relative}   /* no z-index: the hero name blends with the canvas below */
+.sw{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.si{display:inline-block;will-change:transform}
+
+/* loader */
+.loader{position:fixed;inset:0;z-index:90;background:var(--fog);color:var(--ink);display:grid;place-items:center;clip-path:inset(0 0 0 0)}
+.loader-mark{font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;display:grid;gap:14px;justify-items:center}
+.loader-bar{width:160px;height:2px;background:color-mix(in oklab,var(--ink) 12%,transparent);overflow:hidden;border-radius:2px}
+.loader-bar i{display:block;height:100%;width:100%;background:var(--ink);transform-origin:left;transform:scaleX(0)}
+.loader-num{position:absolute;right:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);font-family:var(--f-display);font-weight:300;font-size:clamp(64px,11vw,160px);line-height:.8;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.loader-note{position:absolute;left:var(--gutter);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);font-size:13px;color:color-mix(in oklab,var(--ink) 55%,var(--fog));font-variant-numeric:tabular-nums}
+
+/* pointer label: rides beside the real cursor, never replaces it */
+.tip{position:fixed;left:0;top:0;z-index:85;pointer-events:none;padding:9px 14px;border-radius:999px;background:var(--violet);color:#fff;font-size:13px;font-weight:600;white-space:nowrap;opacity:0;transform:translate(18px,18px) scale(.6);transform-origin:0 0;transition:opacity .2s,transform .35s var(--ease)}
+.tip.on{opacity:1;transform:translate(18px,18px) scale(1)}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:calc(env(safe-area-inset-top,0px) + 18px) var(--gutter) 16px;color:var(--fg);pointer-events:none}
+.nav>*{pointer-events:auto}
+.logo{font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.03em;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo i{width:9px;height:9px;border-radius:50%;background:var(--violet);display:block}
+.nav ul{list-style:none;margin:0;padding:6px;display:flex;gap:2px;border-radius:999px;background:color-mix(in oklab,var(--bg) 70%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.nav ul a{display:block;padding:8px 16px;border-radius:999px;text-decoration:none;font-size:14px;font-weight:500;transition:background .3s,color .3s}
+.nav ul a:hover,.nav ul a.on{background:var(--fg);color:var(--bg)}
+.nav .gh{font-size:14px;font-weight:500;text-decoration:none;padding:10px 16px;border-radius:999px;border:1px solid var(--line);transition:border-color .3s}
+.nav .gh:hover{border-color:var(--fg)}
+
+/* hero */
+.hero{position:relative;min-height:100vh;min-height:100svh;display:grid;grid-template-rows:1fr auto;padding-block:calc(env(safe-area-inset-top,0px) + 90px) 28px}
+.hero h1{margin:0;align-self:center;justify-self:center;font-family:var(--f-display);font-weight:600;font-size:clamp(92px,20vw,340px);line-height:.8;letter-spacing:-.065em;color:#fff;mix-blend-mode:difference;text-align:center;padding-right:.04em}
+.no-blend .hero h1{color:var(--fg);mix-blend-mode:normal}
+.hero-foot{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:24px;align-items:end}
+.hero-foot p{margin:0}
+.lede{font-family:var(--f-display);font-weight:400;font-size:clamp(18px,1.6vw,24px);line-height:1.3;letter-spacing:-.01em;max-width:28ch}
+.lede span{color:var(--soft)}
+.hero-cn{font-size:14px;color:var(--soft);letter-spacing:.04em;justify-self:center;text-align:center}
+.scroll-hint{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:500}
+.scroll-hint i{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-style:normal;animation:bob 2.4s var(--ease) infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* work reel */
+.work{position:relative;height:100vh;height:100svh;color:var(--fg)}
+.w-ui{position:absolute;inset:0;padding:calc(env(safe-area-inset-top,0px) + 92px) var(--gutter) 26px;display:grid;grid-template-rows:auto 1fr auto;pointer-events:none;opacity:0}
+.w-ui a,.w-ui button{pointer-events:auto}
+.w-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+.w-index{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px 18px;max-width:900px}
+.w-index button{background:none;border:0;padding:3px 0;cursor:pointer;font-size:13px;font-weight:500;color:color-mix(in oklab,var(--fg) 38%,var(--bg));display:flex;gap:8px;align-items:center;transition:color .3s;white-space:nowrap}
+.w-index button::before{content:"";width:0;height:1px;background:currentColor;transition:width .45s var(--ease)}
+.w-index button:hover,.w-index button.on{color:var(--fg)}
+.w-index button.on::before{width:14px}
+.w-bottom{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto;gap:clamp(20px,3vw,48px);align-items:end}
+.w-title{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(40px,5.4vw,92px);line-height:.9;letter-spacing:-.045em;min-height:.9em;text-wrap:balance}
+.w-cn{margin:10px 0 0;font-size:15px;font-weight:500;color:var(--soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--violet);color:#fff}
+.chip.line{background:transparent;border:1px solid var(--line);color:var(--fg)}
+.w-desc{margin:0 0 14px;font-size:15px;line-height:1.75;color:color-mix(in oklab,var(--fg) 78%,var(--bg));max-width:40em}
+.w-tags,.tags{display:flex;flex-wrap:wrap;gap:6px}
+.w-tags{margin-bottom:16px}
+.w-tags span,.tags span{font-size:12px;font-weight:500;padding:5px 11px;border-radius:999px;border:1px solid var(--line);color:var(--soft)}
+.w-links{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;border:1px solid var(--fg);background:var(--fg);color:var(--bg);cursor:pointer;transition:background .3s,color .3s,border-color .3s}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn:hover{background:var(--violet);border-color:var(--violet);color:#fff}
+.w-count{font-family:var(--f-display);font-weight:300;font-size:clamp(56px,7vw,120px);line-height:.8;letter-spacing:-.05em;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.w-count small{font-size:.28em;letter-spacing:0;color:var(--soft);margin-left:.2em}
+.w-stars{font-size:13px;font-weight:500;color:var(--soft);text-align:right;margin-top:10px;min-height:1.2em}
+.w-progress{position:absolute;left:var(--gutter);right:var(--gutter);bottom:12px;height:1px;background:var(--line)}
+.w-progress i{position:absolute;inset:0;background:var(--fg);transform-origin:left;transform:scaleX(0)}
+.w-list{list-style:none;margin:0;padding:0}
+.no-gl .work{height:auto;padding-block:120px 60px}
+.no-gl .w-ui{display:none}
+.no-gl .w-list{position:static;width:auto;height:auto;clip:auto;white-space:normal;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:36px}
+.w-list button{all:unset;cursor:pointer;display:block}
+.w-list img{width:100%;height:auto;border-radius:14px;display:block;margin-bottom:12px}
+.w-list h3{margin:0;font-family:var(--f-display);font-size:28px;font-weight:500;letter-spacing:-.03em}
+.w-list p{margin:6px 0 0;color:var(--soft)}
+
+/* about */
+.about{padding-block:26vh 18vh;display:grid;gap:clamp(48px,9vh,96px)}
+.statement{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(34px,5.4vw,92px);line-height:1;letter-spacing:-.045em;max-width:17ch;text-wrap:balance}
+.statement em{font-style:normal;color:var(--violet)}
+.about-cn{margin:0;font-size:clamp(16px,1.4vw,20px);line-height:1.9;color:var(--soft);max-width:34em;justify-self:end}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:0;border-top:1px solid var(--line);padding-top:24px}
+.stats div{display:grid;gap:8px;min-width:0}
+.stats dd{margin:0;order:-1;font-family:var(--f-display);font-weight:300;font-size:clamp(56px,8vw,140px);line-height:.85;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.stats dt{font-size:14px;color:var(--soft)}
+.stats dt b{color:var(--fg);font-weight:500}
+
+/* side projects */
+.side{padding-block:12vh 16vh;display:grid;gap:36px}
+.side-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px}
+.side-head h2{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(40px,5vw,84px);line-height:.9;letter-spacing:-.05em}
+.side-head p{margin:0;color:var(--soft);max-width:26em}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rows>li{border-bottom:1px solid var(--line)}
+.row{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 140px;gap:24px;align-items:center;padding:26px 0;cursor:pointer;position:relative;text-decoration:none}
+.row h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(28px,3.4vw,52px);line-height:1;letter-spacing:-.04em;transition:transform .6s var(--ease),color .3s}
+.row .d{color:var(--soft);font-size:15px;min-width:0}
+.row .s{justify-self:end;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;transition:opacity .3s}
+.row .s i{width:8px;height:8px;border-radius:50%;background:#3FBF8A;box-shadow:0 0 0 0 rgba(63,191,138,.6);animation:ping 2.2s infinite}
+@keyframes ping{100%{box-shadow:0 0 0 10px rgba(63,191,138,0)}}
+.row .ic{position:absolute;right:0;top:50%;width:46px;height:46px;margin-top:-23px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;font-size:18px;transform:scale(0);transition:transform .5s var(--ease)}
+.row:hover h3,.row[aria-expanded="true"] h3{transform:translateX(clamp(8px,1.6vw,24px));color:var(--violet)}
+.row:hover .ic,.row[aria-expanded="true"] .ic{transform:scale(1)}
+.row:hover .s,.row[aria-expanded="true"] .s{opacity:0}
+.row[aria-expanded="true"] .ic{transform:scale(1) rotate(45deg)}
+.panel{overflow:hidden}
+.panel-in{padding:6px 0 40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px clamp(24px,4vw,64px);align-items:start}
+.panel p{margin:0;line-height:1.85;max-width:38em}
+.pts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pts li{display:flex;gap:12px;align-items:baseline;color:var(--soft)}
+.pts li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--violet);transform:translateY(-2px)}
+.warn{font-size:13px;line-height:1.75;color:var(--soft);border-left:2px solid var(--violet);padding-left:14px}
+.subs{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px}
+.sub{border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:10px;align-content:start}
+.sub h4{margin:0;font-family:var(--f-display);font-weight:500;font-size:24px;letter-spacing:-.03em}
+.sub span{font-size:13px;color:var(--violet);font-weight:600}
+.sub p{font-size:14px;color:var(--soft);line-height:1.75}
+
+/* contact */
+.contact{min-height:100vh;min-height:100svh;display:grid;grid-template-rows:1fr auto auto;gap:44px;padding-block:120px 24px}
+.c-big{align-self:center;margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(64px,13vw,230px);line-height:.85;letter-spacing:-.065em}
+.c-big>span{display:block}
+.c-big>span:last-child{color:var(--violet)}
+.c-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(28px,5vw,80px);align-items:end}
+.c-mail{display:grid;gap:16px}
+.c-mail p{margin:0;color:var(--soft);max-width:30em;line-height:1.8}
+.email{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,3.2vw,48px);letter-spacing:-.03em;margin:0;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
+.links{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.links a{display:grid;grid-template-columns:minmax(0,1fr) auto 20px;gap:14px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line);text-decoration:none;font-weight:500;transition:padding .45s var(--ease),color .3s}
+.links a b{font-weight:400;color:var(--soft);font-size:14px}
+.links a:hover{padding-left:14px;color:var(--violet)}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--soft);border-top:1px solid var(--line);padding-top:18px}
+.foot a{text-decoration:none}
+
+/* case pages */
+.case{--bg:var(--dusk);--fg:var(--mist);--soft:color-mix(in oklab,var(--mist) 58%,var(--dusk));--line:color-mix(in oklab,var(--mist) 14%,transparent);
+  position:fixed;inset:0;z-index:70;visibility:hidden;color:var(--fg)}
+.case.open{visibility:visible}
+.case-bg{position:absolute;inset:0;background:var(--dusk);opacity:0}
+.case-scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.case-bar{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 16px) var(--gutter) 16px;background:linear-gradient(var(--dusk) 55%,transparent)}
+.case-bar .btn{padding:10px 16px;font-size:13px}
+.case-bar span{font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+.case-inner{width:min(1280px,100%);margin:0 auto;padding:4px var(--gutter) 64px;display:grid;gap:clamp(56px,9vh,104px)}
+.case-hero{margin:0;border-radius:20px;overflow:hidden;transform-origin:0 0;background:#000;will-change:transform}
+.case-hero img{display:block;width:100%;height:auto}
+.case-head{display:grid;gap:18px}
+.case-head h2{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(48px,8vw,140px);line-height:.88;letter-spacing:-.055em;text-wrap:balance}
+.case-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:15px;color:var(--soft)}
+.case-tag{margin:0;font-family:var(--f-display);font-size:clamp(20px,2vw,30px);letter-spacing:-.02em;line-height:1.3;max-width:30ch}
+.case-cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:start}
+.case-intro{margin:0;font-size:clamp(16px,1.3vw,19px);line-height:2;color:color-mix(in oklab,var(--fg) 86%,var(--bg))}
+.case-aside{display:grid;gap:24px}
+.facts{margin:0;display:grid;border-top:1px solid var(--line)}
+.facts div{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}
+.facts dt{color:var(--soft);font-size:14px}
+.facts dd{margin:0;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.case-note{margin:0;font-size:13px;line-height:1.75;color:var(--soft);border-left:2px solid var(--violet);padding-left:14px}
+.sec{display:grid;gap:28px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:20px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.sec-h h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(26px,2.6vw,40px);letter-spacing:-.035em}
+.sec-h span{font-size:13px;color:var(--soft)}
+.feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:36px 40px}
+.feat div{display:grid;gap:10px;align-content:start}
+.feat h4{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;display:flex;gap:10px;align-items:center}
+.feat h4::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--violet);flex:none}
+.feat p{margin:0;color:var(--soft);line-height:1.8;font-size:15px}
+.contrib{display:grid;gap:16px;max-width:52em}
+.contrib p{margin:0;line-height:1.9;font-size:16px}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;gap:12px;align-content:start;padding-top:18px;border-top:1px solid var(--line);color:color-mix(in oklab,var(--fg) 82%,var(--bg));line-height:1.8;font-size:15px}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--f-display);font-weight:300;font-size:44px;line-height:1;letter-spacing:-.04em;color:var(--fg)}
+.gallery{columns:2 340px;column-gap:20px}
+.gallery figure{margin:0 0 20px;break-inside:avoid;display:grid;gap:10px}
+.gallery img{width:100%;height:auto;display:block;border-radius:14px;background:#000;border:1px solid var(--line)}
+.gallery figcaption{font-size:13px;color:var(--soft);line-height:1.6}
+.chart{display:grid;gap:14px}
+.chart-row{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 64px;gap:16px;align-items:center;font-size:14px}
+.chart-row span{color:var(--soft)}
+.chart-row b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.chart-track{position:relative;height:30px}
+.chart-bar{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:color-mix(in oklab,var(--mist) 26%,var(--dusk));transform-origin:left}
+.chart-row.best .chart-bar{background:var(--violet)}
+.chart-row.base .chart-bar{background:color-mix(in oklab,var(--mist) 12%,var(--dusk))}
+.chart-plot{position:relative;display:grid;gap:12px}
+.chart-ref{position:absolute;top:-8px;bottom:-8px;border-left:1px dashed color-mix(in oklab,var(--mist) 55%,transparent)}
+.chart-ref em{position:absolute;bottom:100%;left:6px;font-style:normal;font-size:12px;color:var(--soft);white-space:nowrap}
+.chart-axis{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 64px;gap:16px;font-size:12px;color:var(--soft)}
+.chart-axis div{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.chart-src{margin:0;font-size:13px;color:var(--soft)}
+.case-next{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(20px,4vw,56px);align-items:center;padding:28px;border:1px solid var(--line);border-radius:24px;transition:border-color .4s,background .4s}
+.case-next:hover{border-color:var(--violet);background:color-mix(in oklab,var(--violet) 8%,transparent)}
+.case-next img{width:100%;height:auto;border-radius:14px;display:block}
+.case-next small{display:block;font-size:13px;color:var(--soft);margin-bottom:10px}
+.case-next strong{display:block;font-family:var(--f-display);font-weight:500;font-size:clamp(32px,4.4vw,72px);line-height:.95;letter-spacing:-.045em}
+.case-next em{display:block;font-style:normal;color:var(--soft);margin-top:10px}
+
+@media (max-width:1100px){.w-index{display:none}}
+@media (max-width:820px){
+  .nav ul{display:none}
+  .hero-foot{grid-template-columns:minmax(0,1fr) auto}
+  .hero-cn{display:none}
+  .w-bottom{grid-template-columns:minmax(0,1fr)}
+  .w-count{display:none}
+  .w-stars{text-align:left;margin:0}
+  .w-desc{font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .w-tags{display:none}
+  .stats{grid-template-columns:minmax(0,1fr)}
+  .about-cn{justify-self:start}
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:10px 16px}
+  .row .d{grid-column:1/-1;grid-row:2}
+  .row .ic{display:none}
+  .row:hover .s,.row[aria-expanded="true"] .s{opacity:1}
+  .panel-in{grid-template-columns:minmax(0,1fr)}
+  .c-grid{grid-template-columns:minmax(0,1fr)}
+  .case-cols{grid-template-columns:minmax(0,1fr)}
+  .chart-row,.chart-axis{grid-template-columns:minmax(0,96px) minmax(0,1fr) 44px;gap:10px;font-size:12px}
+  .case-next{grid-template-columns:minmax(0,1fr);padding:18px}
+}
+@media (prefers-reduced-motion:reduce){.scroll-hint i,.row .s i{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-mark">Cohen<div class="loader-bar"><i id="loadBar"></i></div></div>
+  <div class="loader-note" id="loadNote">Loading work</div>
+  <div class="loader-num" id="loadNum">0</div>
+</div>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="tip" id="tip" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="logo" href="#hero" data-to>Cohen<i></i></a>
+  <ul>
+    <li><a href="#work" data-to>Work</a></li>
+    <li><a href="#about" data-to>About</a></li>
+    <li><a href="#contact" data-to>Contact</a></li>
+  </ul>
+  <a class="gh" href="https://github.com/Cohenjikan" target="_blank" rel="noopener">GitHub ↗</a>
+</header>
+
+<main>
+  <section id="hero" class="hero pad">
+    <h1 id="heroName" data-chars>Cohen</h1>
+    <div class="hero-foot" data-intro>
+      <p class="lede">Developer &amp; creator. <span>Building digital experiences that merge technical precision with fluid aesthetics.</span></p>
+      <p class="hero-cn">独立开发者，做了十个开源项目</p>
+      <p class="scroll-hint">Scroll <i>↓</i></p>
+    </div>
+  </section>
+
+  <section id="work" class="work pad" aria-label="Selected work">
+    <div class="w-ui" id="wUi">
+      <div class="w-top">
+        <p class="label">Selected work</p>
+        <ol class="w-index" id="wIndex"></ol>
+      </div>
+      <div></div>
+      <div class="w-bottom">
+        <div>
+          <h2 class="w-title" id="wTitle">Poetry Cloud</h2>
+          <p class="w-cn" id="wCn">诗云</p>
+        </div>
+        <div>
+          <p class="w-desc" id="wDesc"></p>
+          <div class="w-tags" id="wTags"></div>
+          <div class="w-links" id="wLinks"></div>
+        </div>
+        <div>
+          <div class="w-count"><span id="wNow">01</span><small id="wTotal">/ 11</small></div>
+          <p class="w-stars" id="wStars"></p>
+        </div>
+      </div>
+      <div class="w-progress"><i id="wBar"></i></div>
+    </div>
+    <ol class="w-list sr" id="wList"></ol>
+  </section>
+
+  <section id="about" class="about pad">
+    <p class="label">About</p>
+    <p class="statement" data-scrub>I build the tools I want to use: for <span class="nw"><em>music</em>,</span> for <span class="nw"><em>games</em>,</span> for <span class="nw"><em>poetry</em>,</span> and for the small chores of every day.</p>
+    <p class="about-cn" data-fade>做自己想用的工具：给音乐、给游戏、给诗，也给每天的小麻烦。<br>Developer, traveler, and occasional photographer.</p>
+    <dl class="stats" id="stats">
+      <div><dt>open-source projects of my own on <b>GitHub</b></dt><dd data-count="10">10</dd></div>
+      <div><dt>stars across them, <b>October 2026</b></dt><dd data-count="381">381</dd></div>
+      <div><dt>languages: <b>Python, TypeScript, JavaScript, C#</b></dt><dd data-count="4">4</dd></div>
+    </dl>
+  </section>
+
+  <section id="side" class="side pad">
+    <div class="side-head">
+      <h2 data-chars>Side projects</h2>
+      <p>业余顺手做的几样东西，数据全程本地处理。点开看详情。</p>
+    </div>
+    <ul class="rows">
+      <li>
+        <a class="row" href="https://melboard.org/" target="_blank" rel="noopener"><h3>Melboard</h3><span class="d">和朋友一起改一台会自己弹的钢琴，还在施工中</span><span class="s">With friends</span><span class="ic">↗</span></a>
+      </li>
+      <li>
+        <button class="row" type="button" aria-expanded="false" aria-controls="sp-relay"><h3>AI Relay</h3><span class="d">API 中转，多模型聚合</span><span class="s"><i></i>Live</span><span class="ic">+</span></button>
+        <div class="panel" id="sp-relay" hidden><div class="panel-in">
+          <p>把 Claude、ChatGPT、DeepSeek 聚合到一个自用接口的中转层：统一密钥、统一调用，按个人需求私下配置。个人自用，不对外分发，也不公开转售。</p>
+          <div class="pts-wrap" style="display:grid;gap:22px">
+            <ul class="pts"><li>Claude、ChatGPT、DeepSeek 一站聚合</li><li>统一密钥，个人自用配置</li><li>私下接入，不公开分发</li></ul>
+            <div class="w-links"><a class="btn" href="https://ai.cohenjikan.com/" target="_blank" rel="noopener">访问网站 ↗</a><a class="btn ghost" href="#contact" data-to>聊聊定制</a></div>
+          </div>
+        </div></div>
+      </li>
+      <li>
+        <button class="row" type="button" aria-expanded="false" aria-controls="sp-chat"><h3>Chat Archives</h3><span class="d">聊天记录系列，QQ、微信、朋友圈</span><span class="s">5 tools</span><span class="ic">+</span></button>
+        <div class="panel" id="sp-chat" hidden><div class="panel-in">
+          <p>围绕 QQ、微信和朋友圈做的五样定制服务，从年度报表到全文档案。数据全程在本地处理，需要的话发邮件聊。</p>
+          <div class="w-links" style="justify-self:start"><a class="btn" href="#contact" data-to>聊聊定制</a></div>
+          <div class="subs">
+            <div class="sub"><span>朋友圈报表</span><h4>Echo</h4><p>把一年的朋友圈翻译成可量化的报表：点赞、评论、真爱粉榜、活跃时段，一份图说清。</p></div>
+            <div class="sub"><span>年度对话报告</span><h4>Chronicle</h4><p>一整年 QQ、微信对话浓缩成一份叙事报告：话量曲线、关键节点、AI 提炼的故事弧线，也可以定制恋爱版。</p></div>
+            <div class="sub"><span>气运曲线</span><h4>Tides of Fortune</h4><p>八字、星盘加行运推演，把命理翻译成可读的曲线模型：年度气运、财运 K 线、关键转折提醒。</p></div>
+            <div class="sub"><span>人格模型</span><h4>Continuum</h4><p>用一个人全部的对话与朋友圈，在本地训练出贴近其语气、用词与说话节奏的人格模型，可接入微信，数据不出本机。</p><p class="warn">仅限使用本人，或经当事人、直系亲属明确授权的数据，并遵守《个人信息保护法》等法律法规和平台条款。</p></div>
+            <div class="sub"><span>全文档案</span><h4>The Archive</h4><p>把 QQ、微信全量聊天记录、朋友圈、点赞评论原样导出归档，本地加密保存，全文检索。多年后想找某句话，搜一下就在。</p></div>
+          </div>
+        </div></div>
+      </li>
+      <li>
+        <button class="row" type="button" aria-expanded="false" aria-controls="sp-ming"><h3>Ming</h3><span class="d">自动算命，命理推演</span><span class="s"><i></i>Live</span><span class="ic">+</span></button>
+        <div class="panel" id="sp-ming" hidden><div class="panel-in">
+          <p>自动算命的命理学网站：融合生辰八字、五行、八卦、星盘、星座与塔罗牌，一次输入生成完整的命理画像。</p>
+          <div style="display:grid;gap:22px">
+            <ul class="pts"><li>生辰八字、五行、八卦排盘</li><li>星盘、星座、塔罗牌综合</li><li>一次输入，全自动出报告</li></ul>
+            <p class="warn">命理和塔罗内容仅供娱乐与文化体验，不构成任何决策依据。请崇尚科学、相信努力，并遵守当地法律法规。</p>
+            <div class="w-links"><a class="btn" href="https://ming.cohenjikan.com/" target="_blank" rel="noopener">访问网站 ↗</a></div>
+          </div>
+        </div></div>
+      </li>
+    </ul>
+  </section>
+
+  <section id="contact" class="contact pad">
+    <h2 class="c-big"><span data-chars>Say</span><span data-chars>hello.</span></h2>
+    <div class="c-grid">
+      <div class="c-mail">
+        <p>虽然主要在做独立开发，但收件箱始终敞开。合作、技术交流，或者只是打个招呼，都会尽量回复。</p>
+        <p class="email" id="email">cohenjikan@gmail.com</p>
+        <div class="w-links">
+          <button class="btn" id="copyBtn" type="button" data-tip="Copy">Copy email</button>
+          <a class="btn ghost" href="mailto:cohenjikan@gmail.com">Write ↗</a>
+        </div>
+      </div>
+      <ul class="links">
+        <li><a href="https://github.com/Cohenjikan" target="_blank" rel="noopener">GitHub <b>@Cohenjikan</b><span>↗</span></a></li>
+        <li><a href="https://www.instagram.com/mk.cohen.3/" target="_blank" rel="noopener">Instagram <b>@mk.cohen.3</b><span>↗</span></a></li>
+        <li><a href="https://melboard.org/" target="_blank" rel="noopener">Melboard <b>melboard.org</b><span>↗</span></a></li>
+        <li><a href="https://louie1.com/" target="_blank" rel="noopener">Louie's homepage <b>louie1.com</b><span>↗</span></a></li>
+        <li><a href="https://brandyxue.com/" target="_blank" rel="noopener">Jimmy Xue's homepage <b>brandyxue.com</b><span>↗</span></a></li>
+      </ul>
+    </div>
+    <footer class="foot"><span>© 2026 Cohen</span><span>Made with three.js and GSAP</span><a href="#hero" data-to>Back to top ↑</a></footer>
+  </section>
+</main>
+
+<div class="case" id="case" role="dialog" aria-modal="true" aria-labelledby="caseTitle" aria-hidden="true">
+  <div class="case-bg" id="caseBg"></div>
+  <div class="case-scroll" id="caseScroll" data-lenis-prevent>
+    <div class="case-bar">
+      <button class="btn ghost" id="caseClose" type="button">← Back to work</button>
+      <span id="caseCount">01 / 11</span>
+      <button class="btn ghost" id="caseNextBtn" type="button">Next →</button>
+    </div>
+    <div class="case-inner" id="caseInner">
+      <figure class="case-hero" id="caseHero"><img id="caseImg" alt=""></figure>
+      <div id="caseBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+(() => {
+"use strict";
+const root = document.documentElement;
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FINE = matchMedia('(pointer: fine)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const expoOut = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const pad2 = n => String(n).padStart(2, '0');
+
+/* ---------- the work, synced with github.com/Cohenjikan (October 2026) ---------- */
+const P = [
+    {
+      "id": "poetry-cloud",
+      "name": "Poetry Cloud",
+      "cn": "诗云",
+      "tex": "tex/shiyun.jpg",
+      "a": 2,
+      "stars": 264,
+      "tags": [
+        "TypeScript",
+        "Three.js",
+        "React"
+      ],
+      "desc": "把中国全历史的诗放进一片可以漫游的三维星系：每位诗人是一颗星，每首诗都有坐标。33,458 位诗人，970,319 首诗。",
+      "links": [
+        [
+          "Live",
+          "https://shiyun.cohenjikan.com"
+        ],
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/shiyun"
+        ]
+      ],
+      "case": {
+        "tagline": "把中国历代诗歌放进一片可漫游的三维星系",
+        "intro": "诗云收录了 33,458 位诗人、970,319 首诗，每位诗人是一颗星，每首诗都有自己的空间坐标，可以在浏览器里缩放、漫游，点开任意一颗星就能读到一首诗。灵感来自刘慈欣的短篇《诗云》：星与星之间的虚空代表一切可能的近体诗，诗不被储存，给一个编号就能算出对应的诗，给出一首诗也能算回它的编号。整个项目是纯静态网站，索引运算和渲染都在浏览器里完成。",
+        "features": [
+          {
+            "t": "星系漫游",
+            "d": "先秦到当代分成 15 个朝代同心壳，可按诗体、朝代、格律筛选，还能看到诗人之间的关系。"
+          },
+          {
+            "t": "虚空捞诗",
+            "d": "点击星海空处，从噪声里算出一首诗，并显示它在全集目录里长达 82 至 229 位的编号。"
+          },
+          {
+            "t": "寻诗",
+            "d": "输入任意一句诗，找出它属于哪位真实诗人的哪一首，不是首句也能命中。"
+          },
+          {
+            "t": "探诗",
+            "d": "填字成诗时实时算出编号，也能把一串编号反查回唯一对应的那首诗。"
+          },
+          {
+            "t": "赠诗网络",
+            "d": "解析诗题和约 250 条字号别名，连出 5,165 条诗人之间的赠答弧线。"
+          },
+          {
+            "t": "五种诗体",
+            "d": "五绝、七绝、五律、七律，外加自由格式和词，打开格律开关可只在合律的诗里漫游。"
+          }
+        ],
+        "how": [
+          "打开 shiyun.cohenjikan.com，建议用电脑浏览器，体验最完整。",
+          "缩放、漫游星空，点开任意一颗星，阅读诗作并查看诗人的赠答关系。",
+          "点一下星与星之间的空处，从噪声里捞出一首诗和它的编号。",
+          "用寻诗输入一句诗找回真实作品，或用探诗把编号反查回诗。"
+        ],
+        "facts": [
+          {
+            "k": "诗人",
+            "v": "33,458 位"
+          },
+          {
+            "k": "诗作",
+            "v": "970,319 首"
+          },
+          {
+            "k": "朝代",
+            "v": "15 个，先秦至当代"
+          },
+          {
+            "k": "全网播放",
+            "v": "超 1000 万"
+          }
+        ],
+        "stack": [
+          "TypeScript",
+          "React 18",
+          "Vite",
+          "three.js",
+          "React Three Fiber",
+          "zustand"
+        ],
+        "license": "PolyForm Noncommercial 1.0.0",
+        "note": null,
+        "gallery": [
+          {
+            "src": "tex/case/shiyun-0.jpg",
+            "alt": "主界面：由真实诗人构成的整片星系，顶栏可按诗体、朝代、格律筛选",
+            "w": 1600,
+            "h": 800
+          },
+          {
+            "src": "tex/case/shiyun-1.jpg",
+            "alt": "点开一颗星：李白《望庐山瀑布》竖排呈现，并显示它在全集目录里的完整编号",
+            "w": 1600,
+            "h": 873
+          },
+          {
+            "src": "tex/case/shiyun-2.jpg",
+            "alt": "选中李白：金色弧线汇出他与其他诗人的赠答网络",
+            "w": 1600,
+            "h": 800
+          },
+          {
+            "src": "tex/case/shiyun-3.jpg",
+            "alt": "探诗：填字成诗实时算出编号，也可凭编号反查回一首诗",
+            "w": 1600,
+            "h": 800
+          }
+        ]
+      }
+    },
+    {
+      "id": "musicmaster",
+      "name": "MusicMaster",
+      "cn": "声谱坊",
+      "tex": "tex/music-master.jpg",
+      "a": 2,
+      "stars": 71,
+      "tags": [
+        "Python",
+        "Audio AI",
+        "Local-first"
+      ],
+      "desc": "完全本地的一体化音乐处理：人声分离、音频自动记谱、简谱与五线谱双向互译，还能修音、换音色。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/MusicMaster"
+        ]
+      ],
+      "case": {
+        "tagline": "纯本地运行的一体化 AI 音乐工坊",
+        "intro": "声谱坊是一个纯本地运行的浏览器工具，把 BS-RoFormer、CREPE、Seed-VC、music21 等多个开源音乐模型编排成四条经过验证的流水线：拆声、记谱、简谱与五线谱互译、修音换音色。它主要面向业余歌手、需要扒谱的人和重视隐私的用户，比如输入一段清唱，就能得到五线谱、简谱和逐音可信度。音频全程在本机处理，项目本身只做编排与桥接，不修改上游的推理配方。",
+        "features": [
+          {
+            "t": "拆声",
+            "d": "一首歌依次分出人声与伴奏、去和声主唱、降噪干净主唱，多份产物可以逐一对比。"
+          },
+          {
+            "t": "记谱",
+            "d": "把清唱或哼唱转成五线谱和简谱，并给出逐音可信度，自动标出存疑的音。"
+          },
+          {
+            "t": "互译",
+            "d": "简谱与五线谱 MusicXML 双向互译，核心音级序列往返无损。"
+          },
+          {
+            "t": "重塑",
+            "d": "先修准音高再换回本人音色，把跑调的清唱修成在调、干净且仍是本人的声音。"
+          },
+          {
+            "t": "纯本地运行",
+            "d": "音频不离开本机，只有首次下载模型权重时需要联网。"
+          },
+          {
+            "t": "许可透明",
+            "d": "代码为 Apache-2.0，NOTICE 里逐条标明哪些模型权重不可商用。"
+          }
+        ],
+        "how": [
+          "克隆仓库，运行一键安装脚本建立主环境。",
+          "Windows 双击启动.bat，macOS 或 Linux 运行 start.sh，浏览器会自动打开本地页面。",
+          "此时互译和记谱两个页签已经可用，上传清唱就能出谱。",
+          "需要拆声和重塑时，再按说明配置 GPU 环境并下载权重，建议显存 8GB 以上。"
+        ],
+        "facts": [
+          {
+            "k": "运行环境",
+            "v": "Python 3.11"
+          },
+          {
+            "k": "平台",
+            "v": "Windows、macOS、Linux"
+          },
+          {
+            "k": "GPU 功能",
+            "v": "建议显存 8GB 以上"
+          },
+          {
+            "k": "本地地址",
+            "v": "127.0.0.1:7860"
+          }
+        ],
+        "stack": [
+          "Python 3.11",
+          "FastAPI",
+          "BS-RoFormer",
+          "CREPE",
+          "Seed-VC",
+          "music21",
+          "Verovio",
+          "PyTorch"
+        ],
+        "license": "Apache-2.0（代码），部分模型权重为非商用",
+        "note": null,
+        "gallery": [
+          {
+            "src": "tex/case/music-0.gif",
+            "alt": "上传清唱并提交，旋转黑胶显示进度，最后输出五线谱、简谱和逐音可信度",
+            "w": 760,
+            "h": 475
+          },
+          {
+            "src": "tex/case/music-1.jpg",
+            "alt": "拆声：三段级联人声分离与逐束产物",
+            "w": 1600,
+            "h": 1507
+          },
+          {
+            "src": "tex/case/music-2.jpg",
+            "alt": "记谱：清唱转谱与逐音可信度标注",
+            "w": 1600,
+            "h": 1588
+          },
+          {
+            "src": "tex/case/music-3.jpg",
+            "alt": "互译：简谱与五线谱双向互译",
+            "w": 1600,
+            "h": 1445
+          }
+        ]
+      }
+    },
+    {
+      "id": "btr",
+      "name": "Bilibili Thread Ripper",
+      "cn": "线程撕裂者 BTR",
+      "role": "Contributor",
+      "tex": "tex/btr.jpg",
+      "a": 2,
+      "stars": 1027,
+      "tags": [
+        "JavaScript",
+        "Userscript",
+        "Desktop"
+      ],
+      "desc": "多线程并发加载，缓解海外看 B 站的卡顿。这是 Louie 的项目，我参与了浏览器版和桌面版的开发。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/MrTangLuyao/Bilibili-thread-ripper"
+        ],
+        [
+          "Desktop",
+          "https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop"
+        ]
+      ],
+      "case": {
+        "tagline": "帮海外用户解决 B 站卡顿的多线程加速脚本",
+        "intro": "很多海外用户带宽并不差，可一看 B 站冷门视频、4K 或 4K 60 帧就开始卡，因为网页播放器一段数据只开一条连接。线程撕裂者是一个油猴脚本，它把视频分段再切成很多小块，分给多条连接、多个节点并发下载，核对位置后按顺序交给 B 站原生播放器，弹幕、清晰度、字幕照常由 B 站负责。它只优化你本来就有权访问的媒体数据，不会绕过会员、登录、区域、清晰度、审核状态或数字版权保护等限制。另有桌面版 BTR Desktop，把同一套下载内核带进官方哔哩哔哩 Windows 客户端。",
+        "contribution": [
+          "主仓库：合并了 Roushelfy 提交的 #25（直播加速模块和三处点播修复），合并时解决了与 0.9.4.0 改动的冲突，并补上会话内拖动进度条的两处时序问题：跳转前先丢弃写了一半的分片，旧位置晚到的写入不再影响新位置。",
+          "桌面版：提交了 0.9.4.0-d1，把共用下载内核同步到浏览器版 0.9.4.0，移植了自动线程数，给维护程序加上静默运行参数，并修复了更新时读不到客户端进程路径就中止的问题。"
+        ],
+        "features": [
+          {
+            "t": "多线程分块",
+            "d": "把每个视频分段切成小块，多条连接各下不同部分，位置或长度不对的块直接丢掉，不会塞进播放器。"
+          },
+          {
+            "t": "下载调度",
+            "d": "持续测量各 CDN 的速度、响应时间和稳定性，据此分配线程，断了从已下到的位置接着下，离播放越近的数据越先下。"
+          },
+          {
+            "t": "大陆 CDN",
+            "d": "冷门视频直接去大陆节点取数据，不在海外没缓存的节点上干等，也可以自定义只用哪些视频服务器。"
+          },
+          {
+            "t": "自动线程数",
+            "d": "从 8 条线程起步，出现卡顿或缓冲跟不上时逐档加到最多 32 条，加了没变快就退回。"
+          },
+          {
+            "t": "直播加速",
+            "d": "屏蔽直播 P2P，分片在多个官方节点之间竞速，并提前下载已宣告的分片，目前还在实验阶段。"
+          },
+          {
+            "t": "桌面版",
+            "d": "接入官方 Windows 客户端，保留原本的播放器、字幕、弹幕和快捷键，可在设置里一键卸载还原。"
+          }
+        ],
+        "how": [
+          "在浏览器里装好暴力猴或 Tampermonkey 扩展，Chrome、Edge 还要在扩展详情里打开「允许运行用户脚本」。",
+          "点 README 里的安装链接装上脚本，有新版时会自动提示更新。",
+          "打开任意 B 站视频，从悬浮球进入设置，推荐大陆 CDN 加自动线程。",
+          "想在官方 Windows 客户端里用，就运行桌面版的一键安装脚本。"
+        ],
+        "facts": [
+          {
+            "k": "星标",
+            "v": "主仓库 1,027，桌面版 125"
+          },
+          {
+            "k": "支持浏览器",
+            "v": "Chromium、Firefox、Safari 内核"
+          },
+          {
+            "k": "隐私",
+            "v": "无遥测，媒体数据只留在当前页面"
+          },
+          {
+            "k": "我的角色",
+            "v": "Contributor"
+          }
+        ],
+        "stack": [
+          "JavaScript",
+          "Userscript",
+          "Media Source Extensions",
+          "HLS",
+          "Node.js",
+          "Playwright",
+          "C#",
+          "PowerShell"
+        ],
+        "license": "MIT",
+        "chart": {
+          "title": "杜比视界 4K60 视频的下载速度",
+          "unit": "Mbps",
+          "ref": [
+            20.5,
+            "片源码率 20.5"
+          ],
+          "max": 50,
+          "rows": [
+            [
+              "不开启插件",
+              7.5
+            ],
+            [
+              "0.9.1.1，8 线程",
+              27.0
+            ],
+            [
+              "0.9.2.3，8 线程",
+              32.8
+            ],
+            [
+              "0.9.3.0，8 线程",
+              40.8
+            ],
+            [
+              "0.9.4.2，自动线程",
+              43.0
+            ]
+          ],
+          "source": "数据来自 BTR README 的实测，5 次取平均，仅供参考。"
+        },
+        "gallery": [
+          {
+            "src": "tex/case/btr-0.gif",
+            "alt": "线程撕裂者效果演示",
+            "w": 800,
+            "h": 450
+          },
+          {
+            "src": "tex/case/btr-1.jpg",
+            "alt": "B 站播放器设置里的 CDN 和并发线程选项",
+            "w": 1112,
+            "h": 933
+          },
+          {
+            "src": "tex/case/btr-2.jpg",
+            "alt": "桌面版：官方客户端系统设置里的线程撕裂者区域",
+            "w": 1600,
+            "h": 898
+          }
+        ]
+      }
+    },
+    {
+      "id": "mcmusicmaker",
+      "name": "McMusicMaker",
+      "cn": "红石音乐机",
+      "fresh": true,
+      "tex": "tex/mcmusicmaker.jpg",
+      "a": 2,
+      "tags": [
+        "Python",
+        "AI agent",
+        "Minecraft"
+      ],
+      "desc": "把一首歌交给 AI agent，在 Minecraft 里搭成一台真正会演奏的音符盒红石机器。不用写代码，也不用懂红石。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/McMusicMaker"
+        ]
+      ],
+      "case": {
+        "tagline": "让 AI agent 把歌曲搭成会演奏的红石机器",
+        "intro": "红石音乐机是一个交给 AI agent 使用的 skill：给它一首 MIDI 和一个 Minecraft Java 版存档，它会分析歌曲、安排声部，生成数据包、资源包和所需的模组，并打包成可以双击安装的文件。最后在游戏里演奏的不是原曲音频，而是真实的音符盒和红石线路。使用者不需要会写代码，也不用自己研究红石，跟着 agent 的提示一步步做就行。",
+        "features": [
+          {
+            "t": "歌曲分析",
+            "d": "分析 MIDI 的时长和音符密度，判断适合哪种机器并估算占地。"
+          },
+          {
+            "t": "五种机型",
+            "d": "原地紧凑、S 形折线、直线、自定义路线、多轨并行，可以自己选，也可以让 agent 推荐。"
+          },
+          {
+            "t": "一键安装",
+            "d": "构建完成后生成 DEPLOY_TO_GAME.bat，关闭游戏后双击即可装好。"
+          },
+          {
+            "t": "走线设计器",
+            "d": "在浏览器里拖动节点设计机器路线，实时预览尺寸和占地。"
+          },
+          {
+            "t": "命令方块编辑",
+            "d": "在音乐时间轴上打关键帧，安排粒子、烟花等命令在何时何地触发。"
+          },
+          {
+            "t": "采样音色",
+            "d": "随包附带钢琴、贝斯、主音、铺底和鼓的采样资源包，钢琴来自 Salamander Grand Piano。"
+          }
+        ],
+        "how": [
+          "下载完整仓库，用 Codex、Claude Code 等能读写文件的 agent 打开。",
+          "准备好歌曲文件（最好是 MIDI）、Minecraft Java 版的版本号和存档位置。",
+          "把 README 里给出的那段话发给 agent，回答它的问题，选定机型。",
+          "关闭游戏，双击 DEPLOY_TO_GAME.bat，再进入存档按提示输入命令并按下播放。"
+        ],
+        "facts": [
+          {
+            "k": "支持版本",
+            "v": "Java 版 1.21 至 1.21.10"
+          },
+          {
+            "k": "平台",
+            "v": "Windows"
+          },
+          {
+            "k": "机型",
+            "v": "5 种"
+          },
+          {
+            "k": "画面",
+            "v": "全部为游戏内实录"
+          }
+        ],
+        "stack": [
+          "Python",
+          "Java (Fabric mod)",
+          "Minecraft datapack",
+          "mido",
+          "HTML",
+          "JavaScript"
+        ],
+        "license": "PolyForm Noncommercial 1.0.0",
+        "note": null,
+        "gallery": [
+          {
+            "src": "tex/case/mc-0.gif",
+            "alt": "游戏内实录：音符盒红石机器正在演奏",
+            "w": 640,
+            "h": 360
+          },
+          {
+            "src": "tex/case/mc-1.gif",
+            "alt": "多轨并行型：声部分轨并行，同一时刻的音符横向对齐",
+            "w": 460,
+            "h": 288
+          },
+          {
+            "src": "tex/case/mc-2.gif",
+            "alt": "S 形折线型：线路折返成 S 形，脉冲沿线路移动",
+            "w": 460,
+            "h": 288
+          },
+          {
+            "src": "tex/case/mc-3.jpg",
+            "alt": "走线设计器：拖动节点改变机器走线，实时预览尺寸与占地",
+            "w": 1600,
+            "h": 881
+          }
+        ]
+      }
+    },
+    {
+      "id": "rhythm-doctor",
+      "name": "Rhythm Doctor Trainer",
+      "cn": "节奏医生修改器",
+      "tex": "tex/rhythm-doctor.jpg",
+      "a": 2,
+      "tags": [
+        "C#",
+        "BepInEx",
+        "Unity"
+      ],
+      "desc": "按下 F3 你就是伊恩医生。游戏内图形修改器：满分 Autoplay、变速、放宽判定、关卡直达，专为单机录制。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/RhythmDoctorTrainer"
+        ]
+      ],
+      "case": {
+        "tagline": "《节奏医生》游戏内图形修改器，按 F3 呼出",
+        "intro": "这是给《节奏医生》做的游戏内图形修改器，进入关卡按 F3 呼出菜单，主要用来录制完美通关视频。它不做内存偏移或特征码扫描，只调用游戏自身已有的开关和函数，所以比内存修改更稳定，游戏小更新后通常也不容易失效。仅供单机自娱与录制，不触碰任何在线、对战或排行榜逻辑。",
+        "features": [
+          {
+            "t": "满分自动演奏",
+            "d": "用引擎原生的自动模式按谱面满分演奏，没有输入延迟，画面不出现提示字样，并默认保留完美结算标记。"
+          },
+          {
+            "t": "变速含音高",
+            "d": "游戏速度可在 0.1× 到 3× 之间调整，BPM 与音高同步缩放，在关卡开始或重开时生效。"
+          },
+          {
+            "t": "放宽判定与无敌",
+            "d": "判定窗口可放宽 1 到 10 倍（默认 3 倍），也可以开启无敌，永不失败、不被中途打断。"
+          },
+          {
+            "t": "关卡直达",
+            "d": "列出全部关卡并支持文字筛选，点一下直接进入，绕过 hub 里剧情和 NPC 的解锁限制。"
+          },
+          {
+            "t": "失误自动重开",
+            "d": "出现 miss 时自动重开本关，适合追求 perfect 的玩家反复练习。"
+          },
+          {
+            "t": "存档修改",
+            "d": "支持一键 S+、一键推进剧情、编辑举重节奏最佳轮数，也能解锁全部成就或关闭成就发放。"
+          }
+        ],
+        "how": [
+          "Windows 在 PowerShell 里运行一行安装命令，macOS 和 Linux 在终端运行一行安装脚本，后两者无需 BepInEx。",
+          "用 Steam 正常启动游戏，进入任意关卡后按 F3 打开菜单。",
+          "在「普通」页打开 Autoplay，进入关卡后用 OBS 等软件录屏。",
+          "想录被剧情锁住的关卡，切到「关卡直达」页，点关卡名直接进入。"
+        ],
+        "facts": [
+          {
+            "k": "支持平台",
+            "v": "Windows、macOS、Linux"
+          },
+          {
+            "k": "菜单热键",
+            "v": "F3，可在配置文件中修改"
+          },
+          {
+            "k": "适配版本",
+            "v": "Steam 正式版，Unity 6"
+          },
+          {
+            "k": "Windows 加载器",
+            "v": "BepInEx 5.4.23"
+          }
+        ],
+        "stack": [
+          "C#",
+          "BepInEx 5",
+          "HarmonyX",
+          "Mono.Cecil",
+          "Unity 6"
+        ],
+        "license": "MIT",
+        "note": "仅供单机自娱与录制，与 7th Beat Games 无任何关联。免费开源，严禁倒卖。",
+        "gallery": [
+          {
+            "src": "tex/case/rd-0.jpg",
+            "alt": "三个分页总览：普通、存档修改、关卡直达",
+            "w": 1420,
+            "h": 587
+          },
+          {
+            "src": "tex/case/rd-1.jpg",
+            "alt": "「普通」页：Autoplay、变速、失误自动重开等开关",
+            "w": 522,
+            "h": 654
+          },
+          {
+            "src": "tex/case/rd-2.jpg",
+            "alt": "「存档修改」页：一键 S+、推进剧情、解锁成就",
+            "w": 534,
+            "h": 684
+          },
+          {
+            "src": "tex/case/rd-3.jpg",
+            "alt": "「关卡直达」页：可筛选的全部关卡列表",
+            "w": 528,
+            "h": 672
+          }
+        ]
+      }
+    },
+    {
+      "id": "adofai",
+      "name": "ADOFAI Trainer",
+      "cn": "冰与火之舞修改器",
+      "tex": "tex/adofai.jpg",
+      "a": 2,
+      "tags": [
+        "C#",
+        "BepInEx"
+      ],
+      "desc": "帧级满分 Autoplay、无 HUD 干净录制、变速、放宽判定、解锁全部关卡。只翻动游戏自己已有的开关。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/ADOFAITrainer"
+        ]
+      ],
+      "case": {
+        "tagline": "《冰与火之舞》游戏内图形修改器，按 F3 呼出",
+        "intro": "这是《冰与火之舞》的游戏内图形修改器，把引擎自带的 Autoplay 直接拿出来用，方便录制完美通关视频，不用再靠手速硬练或写键盘宏。它只翻动游戏自己已有的开关，不做内存扫描，全项目只有一个 Harmony 补丁，游戏更新后通常不受影响。仅供单机自娱与录制，请勿用于排行榜、对战等在线场景。",
+        "features": [
+          {
+            "t": "满分自动演奏",
+            "d": "借用引擎自带的 autoplay 按谱面帧级满分演奏，主游戏里没有水印，关卡内可以随时开关。"
+          },
+          {
+            "t": "隐藏 HUD",
+            "d": "去掉屏幕上的 HUD，配合 Autoplay 就是游戏自带的开发者录制模式，录出来很干净。"
+          },
+          {
+            "t": "游戏变速",
+            "d": "速度在 0.5× 到 3× 之间连续可调，另有快捷倍速按钮，音高会随速度一起升降。"
+          },
+          {
+            "t": "无敌模式",
+            "d": "即游戏自带的无判定练习模式，永不失败、不被打断，关卡内开启立即生效。"
+          },
+          {
+            "t": "放宽判定",
+            "d": "倍数在 1.0 到 5.0 之间可调，连 Perfect 和 Pure 窗口一起放宽，专为手动练习准备。"
+          },
+          {
+            "t": "解锁全部关卡",
+            "d": "可临时解锁并直接前往选关，关闭即恢复、不写存档；也可以永久解锁，不删已有进度。"
+          }
+        ],
+        "how": [
+          "Windows 在 PowerShell 里运行一行安装命令，会自动定位游戏并装好 BepInEx；macOS 和 Linux 在终端运行一行安装脚本。",
+          "用 Steam 启动游戏，进入任意关卡按 F3 打开菜单。",
+          "在「普通」页打开 Autoplay，需要的话再开隐藏 HUD，然后用 OBS 等软件录屏。",
+          "想录被锁住的关卡，在「开发者」页开启解锁全部关卡，再点前往选关。"
+        ],
+        "facts": [
+          {
+            "k": "支持平台",
+            "v": "Windows、macOS、Linux"
+          },
+          {
+            "k": "菜单热键",
+            "v": "F3，可在配置文件中修改"
+          },
+          {
+            "k": "适配版本",
+            "v": "Steam 正式版"
+          },
+          {
+            "k": "Windows 加载器",
+            "v": "BepInEx 5.4.23"
+          }
+        ],
+        "stack": [
+          "C#",
+          "BepInEx 5",
+          "HarmonyX",
+          "Unity 6",
+          "Unity IMGUI"
+        ],
+        "license": "MIT",
+        "note": "仅供单机自娱与录制，与 7th Beat Games 无任何关联。免费开源，严禁倒卖。",
+        "gallery": [
+          {
+            "src": "tex/case/adofai-0.jpg",
+            "alt": "「普通」页：Autoplay 与隐藏 HUD 开关",
+            "w": 784,
+            "h": 228
+          },
+          {
+            "src": "tex/case/adofai-1.jpg",
+            "alt": "变速：速度滑块、快捷倍速和应用变速并重开本关",
+            "w": 784,
+            "h": 372
+          },
+          {
+            "src": "tex/case/adofai-2.jpg",
+            "alt": "便利玩法：无敌开关与放宽判定倍数滑块",
+            "w": 784,
+            "h": 310
+          }
+        ]
+      }
+    },
+    {
+      "id": "tiny-voice-room",
+      "name": "Tiny Voice Room",
+      "cn": "语音房",
+      "tex": "tex/tiny-voice-room.jpg",
+      "a": 2,
+      "tags": [
+        "WebRTC",
+        "JavaScript",
+        "Self-hosted"
+      ],
+      "desc": "免注册、点链接即用的 WebRTC 语音房。不用下载、不用登录，把链接发给朋友，打开就能说话。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/tiny-voice-room"
+        ]
+      ],
+      "case": {
+        "tagline": "免注册、点开链接就能说话的网页语音房",
+        "intro": "Tiny Voice Room 是一个链接即房间的网页语音工具，适合和几个朋友开黑时随手语音。把链接发出去，对方打开就能说话，不用注册账号，也不用装软件。音频在浏览器之间点对点直连，服务端只转发信令，不接触也不存储媒体流，房间只存在内存里，人走房消。",
+        "features": [
+          {
+            "t": "链接即房间",
+            "d": "打开首页会自动进入一个随机房间，也可以用 /r/名字 开指定房间，复制链接就能邀请。"
+          },
+          {
+            "t": "点对点音频",
+            "d": "浏览器之间全连接直连，服务端只中转 SDP 和 ICE 信令，无法录音或窃听。"
+          },
+          {
+            "t": "独立音量控制",
+            "d": "每位成员有单独的音量条，可以一键静音，也能开按键说话，按住 T 才出声，还有实时麦克风电平表。"
+          },
+          {
+            "t": "零运行时依赖",
+            "d": "服务端只有一个文件，基于 node:http 手写 WebSocket，不需要 npm install，也没有数据库。"
+          },
+          {
+            "t": "局域网邀请",
+            "d": "在本机访问时会自动把邀请链接换成局域网 IP，方便手机和其他电脑加入。"
+          },
+          {
+            "t": "方便自部署",
+            "d": "支持配置 STUN 和 TURN，提供健康检查、Dockerfile，以及 nginx、Caddy、systemd 配置示例。"
+          }
+        ],
+        "how": [
+          "准备 Node 20 或更高版本，拉取仓库后直接启动，不需要安装任何依赖。",
+          "在浏览器打开本机 4173 端口，会自动进入一个新的随机房间。",
+          "把地址栏里的房间链接发给朋友，大家打开后点「加入语音」就能说话。",
+          "要放到公网上用，需要通过 HTTPS 反向代理部署，网络较严格时再配一个 TURN 服务器。"
+        ],
+        "facts": [
+          {
+            "k": "运行环境",
+            "v": "Node 20+"
+          },
+          {
+            "k": "默认端口",
+            "v": "4173"
+          },
+          {
+            "k": "推荐人数",
+            "v": "不超过 6 人"
+          },
+          {
+            "k": "按键说话",
+            "v": "按住 T"
+          }
+        ],
+        "stack": [
+          "Node.js",
+          "WebRTC",
+          "WebSocket",
+          "HTML/CSS/JavaScript",
+          "Docker"
+        ],
+        "license": "MIT",
+        "note": null,
+        "gallery": [
+          {
+            "src": "tex/case/voice-0.jpg",
+            "alt": "已连接的房间：邀请链接、成员列表和每人独立音量条",
+            "w": 1600,
+            "h": 1012
+          },
+          {
+            "src": "tex/case/voice-1.jpg",
+            "alt": "刚开好的房间，邀请链接可以复制，旁边是加入语音按钮",
+            "w": 1600,
+            "h": 1012
+          },
+          {
+            "src": "tex/case/voice-2.jpg",
+            "alt": "控制条：静音、按键说话按钮和实时麦克风电平表",
+            "w": 1194,
+            "h": 142
+          }
+        ]
+      }
+    },
+    {
+      "id": "sync-station",
+      "name": "Sync Station",
+      "cn": "同步驿站",
+      "tex": "tex/sync-station.jpg",
+      "a": 2,
+      "tags": [
+        "WebSocket",
+        "JavaScript"
+      ],
+      "desc": "私有的跨设备中转站：基于 WebSocket 实时同步，文字和文件在多台设备间即时互传，PIN 码锁保护内容。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/sync-station"
+        ]
+      ],
+      "case": {
+        "tagline": "自托管的跨设备文本与文件实时中转站",
+        "intro": "Sync Station 是一个跑在自己 VPS 上的轻量中转站，用来替代发给「文件传输助手」或者给自己发邮件这类绕路做法。在一台设备上粘贴或拖入文本、文件，几乎瞬间就会出现在其他打开页面的设备上。数据只在你自己的服务器上流转，不经过任何第三方云。",
+        "features": [
+          {
+            "t": "实时热同步",
+            "d": "基于 socket.io，服务端状态一有变化就推送给所有已认证的设备，不用刷新页面。"
+          },
+          {
+            "t": "双视图切换",
+            "d": "分屏视图把文本和文件分成两栏，合并视图像聊天一样一条接一条，可一键切换。"
+          },
+          {
+            "t": "拖拽粘贴上传",
+            "d": "可以把文件拖到窗口上，也可以直接用 Ctrl/Cmd-V 粘贴剪贴板里的文件。"
+          },
+          {
+            "t": "超额自动淘汰",
+            "d": "文件总体积超过上限时从最旧的开始自动删除，默认上限 5GB，可以在设置面板里修改。"
+          },
+          {
+            "t": "两层访问控制",
+            "d": "日常访问用仿锁屏的 4 位 PIN，设备会记住；核心设置另用管理员密码保护。"
+          },
+          {
+            "t": "一键部署",
+            "d": "一条命令装好 Node 20、PM2、Nginx 反代和 Let's Encrypt 证书，并附带管理命令。"
+          }
+        ],
+        "how": [
+          "准备一台 Debian 或 Ubuntu 服务器，想用 HTTPS 的话先把域名解析到服务器 IP。",
+          "运行一键部署脚本，按提示选择是否开启 BBR、是否配置域名证书。",
+          "部署完成后用浏览器打开你的域名或服务器的 3000 端口，用默认凭证进入。",
+          "第一时间到设置面板里改掉默认 PIN 和管理员密码。"
+        ],
+        "facts": [
+          {
+            "k": "部署系统",
+            "v": "Debian、Ubuntu"
+          },
+          {
+            "k": "默认端口",
+            "v": "3000"
+          },
+          {
+            "k": "默认存储上限",
+            "v": "5GB"
+          },
+          {
+            "k": "合作",
+            "v": "和 Louie 一起完成"
+          }
+        ],
+        "stack": [
+          "Node.js",
+          "Express",
+          "Socket.IO",
+          "Multer",
+          "PM2",
+          "Nginx"
+        ],
+        "license": "MIT",
+        "note": null,
+        "gallery": [
+          {
+            "src": "tex/case/sync-0.gif",
+            "alt": "在一端粘贴或拖入，另一端几乎瞬间出现",
+            "w": 820,
+            "h": 487
+          },
+          {
+            "src": "tex/case/sync-1.jpg",
+            "alt": "分屏视图：文本域和文件域各占一栏",
+            "w": 1600,
+            "h": 1000
+          },
+          {
+            "src": "tex/case/sync-2.jpg",
+            "alt": "合并视图：内容像聊天流一样依次排列",
+            "w": 1600,
+            "h": 1000
+          },
+          {
+            "src": "tex/case/sync-3.jpg",
+            "alt": "仿锁屏的 4 位 PIN 输入界面",
+            "w": 1600,
+            "h": 1000
+          }
+        ]
+      }
+    },
+    {
+      "id": "claude-usage-monitor",
+      "name": "Claude Usage Monitor",
+      "cn": "用量监视器",
+      "tex": "tex/claude-usage.jpg",
+      "a": 2,
+      "tags": [
+        "Python",
+        "Windows",
+        "Desktop"
+      ],
+      "desc": "实时的 Claude 额度与用量监控：token 消耗、剩余额度、单个项目统计，固定在任务栏，每次调用都心里有数。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/ClaudeUsageMoniter"
+        ]
+      ],
+      "case": {
+        "tagline": "把 Claude Code 真实配额钉在任务栏的托盘工具",
+        "intro": "天天用 Claude Code 的人，往往要等撞上 5 小时或每周上限才知道额度快没了。这是一个轻量的 Windows 托盘应用，它直接读取 Claude Code 已经存在本地的登录令牌，调用用量接口，把服务端的 5 小时和每周配额实时显示在任务栏上，不需要另外登录。令牌只读不写，不会影响 Claude Code 自己的登录状态；它还会解析本地日志，按项目、今天和本月统计等价的 API 花费。",
+        "features": [
+          {
+            "t": "零额外登录",
+            "d": "复用 Claude Code 已有的登录令牌，整个应用里没有任何登录界面，装好就能用。"
+          },
+          {
+            "t": "服务端配额",
+            "d": "5 小时和每周百分比直接来自用量接口，包含 Code 和网页、桌面聊天在内的全部订阅用量。"
+          },
+          {
+            "t": "只读认证",
+            "d": "从不刷新或写入共享令牌，令牌过期时把配额标成灰色，等 Claude Code 换新令牌后自动恢复。"
+          },
+          {
+            "t": "任务栏状态条",
+            "d": "无边框读数条嵌在 Windows 11 任务栏里，不会被最大化窗口盖住，位置重启后也还在。"
+          },
+          {
+            "t": "花费统计",
+            "d": "解析本地日志，按项目、会话、今天和本月汇总等价 API 花费，并对重复记录去重。"
+          },
+          {
+            "t": "阈值提醒",
+            "d": "用量越过 75%、90%、95% 时弹出 Windows 原生通知，越接近上限措辞越紧。"
+          }
+        ],
+        "how": [
+          "确认电脑是 Windows 10 或 11，装有 Python 3.11 及以上版本，并且 Claude Code 已经登录过。",
+          "克隆仓库，安装 pystray、Pillow 和 winotify 三个依赖。",
+          "用 pythonw 运行 app.py，托盘图标和任务栏状态条就会出现，不会弹出登录提示。",
+          "想开机自动运行，就在托盘菜单的设置里勾选「开机自启」。"
+        ],
+        "facts": [
+          {
+            "k": "配额刷新",
+            "v": "每 6 分钟"
+          },
+          {
+            "k": "花费刷新",
+            "v": "每 30 秒"
+          },
+          {
+            "k": "提醒阈值",
+            "v": "75%、90%、95%"
+          },
+          {
+            "k": "运行环境",
+            "v": "Windows 10/11，Python 3.11+"
+          }
+        ],
+        "stack": [
+          "Python",
+          "tkinter",
+          "pystray",
+          "Pillow",
+          "winotify",
+          "Win32 API"
+        ],
+        "license": "MIT",
+        "note": "非官方工具，依赖一个未公开的用量接口。花费只统计 Claude Code 命令行。",
+        "gallery": [
+          {
+            "src": "tex/case/cum-0.gif",
+            "alt": "状态条实时刷新，打开详情窗口查看配额和项目花费",
+            "w": 560,
+            "h": 436
+          },
+          {
+            "src": "tex/case/cum-1.jpg",
+            "alt": "详情窗口：配额进度条、重置倒计时和项目花费（演示数据）",
+            "w": 712,
+            "h": 952
+          },
+          {
+            "src": "tex/case/cum-2.jpg",
+            "alt": "嵌在 Windows 11 任务栏里的状态条",
+            "w": 1600,
+            "h": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "shiyun-corpus",
+      "name": "shiyun-corpus",
+      "cn": "诗云语料库",
+      "fresh": true,
+      "tex": "tex/shiyun-corpus.jpg",
+      "a": 2,
+      "tags": [
+        "Dataset",
+        "JavaScript",
+        "Provenance"
+      ],
+      "desc": "带来源标注的简体中文古典诗词语料库：诗、词、曲，完整不删字，保留原文标点，每条可溯源、可审计。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/shiyun-corpus"
+        ]
+      ],
+      "case": {
+        "tagline": "带来源标注的简体中文古典诗词语料库",
+        "intro": "shiyun-corpus 把 Werneror、yuxqiu、sheepzh 等多个上游诗词库统一、清洗并标注成一个干净完整的库，只收诗、词、曲，不收古文。每条记录都带来源标注，可溯源、可审计、可回滚，正文保留原始标点，也不会因为字库限制而删字。诗云只是它的下游使用方之一，各个下游按自己的需要再做过滤。",
+        "features": [
+          {
+            "t": "来源标注",
+            "d": "每条记录都写明来自哪个上游文件，或属于我方补录、订正，方便审计和回滚。"
+          },
+          {
+            "t": "完整不删字",
+            "d": "收录不受下游字库限制，生僻字、词、曲都保留，正文保留原始标点和朝代原文。"
+          },
+          {
+            "t": "稳定 ID",
+            "d": "id 由作者、朝代、标题和正文的哈希生成，跨重建保持不变。"
+          },
+          {
+            "t": "重出不删",
+            "d": "互见和重出的诗不删除，只标记 dup_group，去重交给使用方决定。"
+          },
+          {
+            "t": "公开与隔离",
+            "d": "古典公有领域文本放在公开层，现代和在册作者的作品逐条标注许可，默认隔离。"
+          },
+          {
+            "t": "校勘层",
+            "d": "补录和订正单独存放，每条注明权威出处，重新构建时自动复用，不会丢失。"
+          }
+        ],
+        "how": [
+          "把 Werneror 等上游父库下载到本机，或用环境变量指定它们的路径。",
+          "运行构建脚本，从上游生成按朝代分片的 JSONL 数据。",
+          "运行校验脚本，检查 schema、朝代、编码、去重和许可，并生成构建报告。",
+          "之后重复构建即可与上游同步，校勘层的补录和订正会自动保留。"
+        ],
+        "facts": [
+          {
+            "k": "收录",
+            "v": "970,325 条记录"
+          },
+          {
+            "k": "朝代",
+            "v": "15 个规范朝代键"
+          },
+          {
+            "k": "数据格式",
+            "v": "JSONL，一行一首"
+          },
+          {
+            "k": "运行环境",
+            "v": "Node 18 及以上，零依赖"
+          }
+        ],
+        "stack": [
+          "Node.js",
+          "JavaScript (ESM)",
+          "JSONL"
+        ],
+        "license": "MIT（代码与标注），诗歌文本按来源各自许可",
+        "note": null,
+        "gallery": []
+      }
+    },
+    {
+      "id": "primerscore",
+      "name": "PrimerScore Web",
+      "cn": "引物设计",
+      "role": "Fork",
+      "tex": "tex/primer-score.jpg",
+      "a": 2,
+      "tags": [
+        "Python",
+        "FastAPI",
+        "Bioinformatics"
+      ],
+      "desc": "PCR 引物设计工具 PrimerScore 的网页版：集成 BLAST 比对与表达感知评分，打开网页就能跑。",
+      "links": [
+        [
+          "GitHub",
+          "https://github.com/Cohenjikan/PrimerScoreWeb"
+        ]
+      ],
+      "case": {
+        "tagline": "PCR 引物设计工具 PrimerScore 的网页版",
+        "intro": "PrimerScore 原本是一个要装在电脑上的桌面工具，用来给大豆基因设计 PCR 引物。这个 fork 给它加了 FastAPI 后端和单文件网页前端，粘贴一段 DNA 序列，就能在浏览器里跑完候选扫描、热力学过滤、BLAST 特异性检查和表达量打分的整套流程，最后拿到一张排好名的引物对表格。仓库里还带了一个交互式部署脚本，可以把它装到自己的服务器上。",
+        "contribution": [
+          "上游是 TH-Chen-CN/PrimerScore 的桌面版。我写了 FastAPI 后端和单文件网页前端，加上实时日志、进度条倒计时和中英文切换，又写了一键部署脚本和部署文档。"
+        ],
+        "features": [
+          {
+            "t": "全流程自动",
+            "d": "扫描 18 到 25 bp 的候选引物，按 Tm、GC 含量、发夹和二聚体过滤后组装成引物对。"
+          },
+          {
+            "t": "特异性检查",
+            "d": "调用 NCBI 公开的 BLAST 服务检查脱靶，不需要本地数据库，一次真实比对大约 2 分钟。"
+          },
+          {
+            "t": "表达量打分",
+            "d": "结合 SoyOmics 和 CoNekT 的大豆组织表达数据综合排序，查询结果缓存在本地。"
+          },
+          {
+            "t": "网页界面",
+            "d": "单文件前端，带实时日志、进度条倒计时和中英文切换，双击结果行就能看完整引物序列。"
+          },
+          {
+            "t": "Dummy 模式",
+            "d": "跳过 BLAST 秒出结果，适合先确认序列没问题再跑真实比对。"
+          },
+          {
+            "t": "一键部署",
+            "d": "部署脚本会问清域名和端口，自动装好 Nginx 反向代理和 systemd 服务。"
+          }
+        ],
+        "how": [
+          "准备好 Python 3.9 及以上版本，安装依赖后启动后端，在浏览器里打开本地页面。",
+          "粘贴大豆 DNA 序列，支持 FASTA 格式，设定要展示的引物对数量，默认 10 对。",
+          "先勾选 Dummy 模式试跑一遍，确认序列有效后再进行真实 BLAST 分析。",
+          "在排名表里双击查看详情和引物序列，需要时导出 JSON 或 CSV。"
+        ],
+        "facts": [
+          {
+            "k": "上游项目",
+            "v": "TH-Chen-CN/PrimerScore"
+          },
+          {
+            "k": "物种支持",
+            "v": "大豆 Glycine max"
+          },
+          {
+            "k": "引物长度",
+            "v": "18 到 25 bp"
+          },
+          {
+            "k": "真实 BLAST",
+            "v": "每次约 2 分钟"
+          }
+        ],
+        "stack": [
+          "Python",
+          "FastAPI",
+          "primer3-py",
+          "Biopython",
+          "NCBI BLAST",
+          "SQLite",
+          "Nginx"
+        ],
+        "license": null,
+        "gallery": []
+      }
+    }
+  ];
+const N = P.length;
+const SHOW_STARS = 50;   // star counts only appear from here up
+const starText = p => p.stars >= SHOW_STARS ? (p.id === 'btr' ? '★ 1,027 on GitHub, desktop 125' : `★ ${p.stars} on GitHub`) : '';
+const chips = p => (p.role ? `<span class="chip${p.role === 'Fork' ? ' line' : ''}">${esc(p.role)}</span>` : '') + (p.fresh ? '<span class="chip">New</span>' : '');
+
+/* ---------- static bits ---------- */
+document.getElementById('wTotal').textContent = '/ ' + pad2(N);
+document.getElementById('wList').innerHTML = P.map((p, i) => `<li><button type="button" data-case="${i}"><img src="${p.tex}" alt="" loading="lazy"><h3>${esc(p.name)}，${esc(p.cn)}</h3><p>${esc(p.desc)}</p></button></li>`).join('');
+document.getElementById('wIndex').innerHTML = P.map((p, i) => `<li><button type="button" data-i="${i}">${esc(p.name)}</button></li>`).join('');
+
+const copyBtn = document.getElementById('copyBtn');
+copyBtn.addEventListener('click', () => {
+  const done = () => { copyBtn.textContent = 'Copied'; setTimeout(() => copyBtn.textContent = 'Copy email', 1800); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('email')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = 'Selected, press Ctrl+C'; };
+  try { navigator.clipboard.writeText('cohenjikan@gmail.com').then(done, fallback); } catch (e) { fallback(); }
+});
+
+function split(el, byWord) {
+  const walk = node => [...node.childNodes].forEach(n => {
+    if (n.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      n.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+        const units = byWord ? [part] : [...part];
+        const word = document.createElement('span'); word.style.whiteSpace = 'nowrap'; word.style.display = 'inline-block';
+        units.forEach(u => { const w = document.createElement('span'); w.className = 'sw'; const i = document.createElement('span'); i.className = 'si'; i.textContent = u; w.appendChild(i); word.appendChild(w); });
+        frag.appendChild(word);
+      });
+      n.replaceWith(frag);
+    } else if (n.nodeType === 1 && n.tagName !== 'BR') walk(n);
+  });
+  walk(el);
+  return el.querySelectorAll('.si');
+}
+
+/* ---------- colors for the fog → dusk weather ---------- */
+const FOG = [0xEC, 0xEB, 0xEF], INK = [0x13, 0x12, 0x18], DUSK = [0x0C, 0x0B, 0x10], MIST = [0xEC, 0xEA, 0xF3];
+const mix3 = (a, b, t) => a.map((v, i) => Math.round(lerp(v, b[i], t)));
+let lastDark = -1;
+function weather(d) {
+  if (Math.abs(d - lastDark) < .003) return; lastDark = d;
+  root.style.setProperty('--bg', `rgb(${mix3(FOG, DUSK, d)})`); root.style.setProperty('--fg', `rgb(${mix3(INK, MIST, d)})`);
+}
+
+/* ======================================================================
+   THE REEL: textured planes laid out in the vertex shader on a tilted
+   ring (hero) and on a flat cinematic strip (work), blended by scroll.
+   ====================================================================== */
+function createReel(onProgress) {
+  if (!window.THREE) return null;
+  const canvas = document.getElementById('gl');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
+  if (!renderer.getContext()) return null;
+  const DPR = Math.min(devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(DPR); renderer.setClearColor(0, 0);
+  const scene = new THREE.Scene();
+  const FOV = 35;
+  const camera = new THREE.PerspectiveCamera(FOV, 1, 10, 20000);
+  let vw = innerWidth, vh = innerHeight, camZ = 1;
+
+  const vert = `
+    uniform float uMix, uR, uTheta, uTilt, uRW, uRH, uRY, uRZ, uSW, uSH, uSX, uSY, uBend, uLift;
+    varying vec2 vUv; varying float vFace;
+    void main(){
+      vUv = uv;
+      vec2 l = position.xy;
+      float th = uTheta + l.x * uRW / uR;
+      vec3 rp = vec3(uR * sin(th), l.y * uRH, uR * cos(th));
+      rp += vec3(sin(th), 0., cos(th)) * uLift * (1. - uMix);
+      float ct = cos(uTilt), st = sin(uTilt);
+      rp = vec3(rp.x, rp.y * ct - rp.z * st, rp.y * st + rp.z * ct) + vec3(0., uRY, uRZ);
+      vec3 sp = vec3(uSX + l.x * uSW, uSY + l.y * uSH, uLift * uMix);
+      float arch = sin(uv.x * 3.14159265);
+      sp.z -= uBend * arch * 140.;
+      sp.y += uBend * (uv.x - .5) * 30.;
+      vec3 p = mix(rp, sp, uMix);
+      vFace = mix(cos(th), 1., uMix);
+      gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.);
+    }`;
+  const frag = `
+    uniform sampler2D uTex; uniform float uImgA, uPlaneA, uHover, uGray, uAlpha, uTime, uRadius, uReady;
+    uniform vec2 uMouse, uSize;
+    varying vec2 vUv; varying float vFace;
+    float rbox(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - r; }
+    void main(){
+      vec2 uv = vUv;
+      vec2 s = vec2(1.);
+      if (uImgA > uPlaneA) s.x = uPlaneA / uImgA; else s.y = uImgA / uPlaneA;
+      vec2 tuv = (uv - .5) * s * (1. - .07 * uHover) + .5;
+      vec2 d = (uv - uMouse) * vec2(uPlaneA, 1.);
+      float dist = length(d);
+      tuv += (d / (dist + 1e-4)) * sin(dist * 22. - uTime * 4.) * .005 * uHover * smoothstep(.7, 0., dist);
+      vec3 col = texture2D(uTex, tuv).rgb;
+      col = mix(vec3(.09, .085, .11), col, uReady);
+      float g = dot(col, vec3(.299, .587, .114));
+      col = mix(col, vec3(g), uGray * .9) * (1. - uGray * .45);
+      float back = smoothstep(.15, -.35, vFace);
+      col *= 1. - back * .6;
+      vec2 px = (uv - .5) * uSize;
+      float sd = rbox(px, uSize * .5, uRadius);
+      float a = 1. - smoothstep(-1., .5, sd);
+      gl_FragColor = vec4(col, a * uAlpha * (1. - back * .45));
+    }`;
+
+  const geo = new THREE.PlaneGeometry(1, 1, 48, 12);
+  const loader = new THREE.TextureLoader();
+  let loaded = 0;
+  const planes = P.map(p => {
+    const planeA = clamp(p.a, 1.7, 2.8);
+    const u = {
+      uMix: { value: 0 }, uR: { value: 500 }, uTheta: { value: 0 }, uTilt: { value: .3 }, uRW: { value: 1 }, uRH: { value: 1 }, uRY: { value: 0 }, uRZ: { value: 0 },
+      uSW: { value: 1 }, uSH: { value: 1 }, uSX: { value: 0 }, uSY: { value: 0 }, uBend: { value: 0 }, uLift: { value: 0 },
+      uTex: { value: null }, uImgA: { value: p.a }, uPlaneA: { value: planeA }, uHover: { value: 0 }, uGray: { value: 0 }, uAlpha: { value: 0 },
+      uTime: { value: 0 }, uRadius: { value: 12 }, uReady: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) }, uSize: { value: new THREE.Vector2(100, 50) }
+    };
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: u, vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    m.frustumCulled = false; scene.add(m);
+    loader.load(p.tex, t => {
+      t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      u.uTex.value = t; u.uImgA.value = t.image.width / t.image.height;
+      gsap.to(u.uReady, { value: 1, duration: .8 });
+      onProgress(++loaded, N);
+    }, undefined, () => onProgress(++loaded, N));
+    return { m, u, planeA, hover: 0, gray: 0, cx: 0, cy: 0, hw: 0, hh: 0, z: 0, theta0: 0, sx0: 0 };
+  });
+
+  const L = {};
+  function resize() {
+    vw = innerWidth; vh = innerHeight;
+    renderer.setSize(vw, vh, false);
+    camZ = (vh / 2) / Math.tan(FOV / 2 * Math.PI / 180);
+    camera.aspect = vw / vh; camera.position.set(0, 0, camZ); camera.updateProjectionMatrix();
+    const small = vw < 820;
+    L.R = small ? clamp(vw * .64, 200, 380) : clamp(vw * .37, 300, 660);
+    const sumA = planes.reduce((s, p) => s + p.planeA, 0);
+    L.rh = (2 * Math.PI * L.R) / (sumA + N * .16);
+    let acc = 0; planes.forEach(p => { const w = p.planeA * L.rh; p.theta0 = (acc + w / 2) / L.R; acc += w + L.rh * .16; });
+    L.rz = -L.R * .55; L.ry = small ? vh * .02 : 0;
+    L.sh = small ? Math.min(vh * .3, (vw * .86) / 2.2) : Math.min(vh * .46, vw * .27);
+    L.gap = small ? vw * .06 : vw * .045;
+    let x = 0; planes.forEach(p => { const w = p.planeA * L.sh; p.sx0 = x + w / 2; x += w + L.gap; });
+    L.sy = small ? vh * .14 : vh * .07;
+  }
+  resize();
+
+  const mouse = { x: -1e4, y: -1e4, nx: 0, ny: 0, sx: 0, sy: 0 };
+  addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; mouse.ny = e.clientY / vh * 2 - 1; }, { passive: true });
+
+  const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false };
+  let T = 0, spin = 0, aSmooth = 0, aPrev = 0, bend = 0, hovered = -1, snap = false;
+
+  function frame(dt) {
+    T += dt; spin += dt * (REDUCE ? .03 : .11);
+    mouse.sx = lerp(mouse.sx, mouse.nx, .05); mouse.sy = lerp(mouse.sy, mouse.ny, .05);
+    const mx = clamp(state.mix, 0, 1);
+    // the reel lingers on each project: an eased staircase between integers
+    const aT = state.active * (N - 1), af = Math.min(N - 2, Math.floor(aT)), fr = clamp(aT - af, 0, 1);
+    const aShaped = af + ease(fr);
+    aSmooth = snap ? aShaped : lerp(aSmooth, aShaped, .12); snap = false;
+    bend = lerp(bend, clamp((aSmooth - aPrev) * 18, -1.2, 1.2), .1); aPrev = aSmooth;
+    const k0 = clamp(Math.floor(aSmooth), 0, N - 1), k1 = Math.min(N - 1, k0 + 1);
+    const centre = lerp(planes[k0].sx0, planes[k1].sx0, aSmooth - k0);
+    const ringRot = spin + scrollY * .0007 + mouse.sx * .35;
+    const tilt = .3 + mouse.sy * .07;
+    const ct = Math.cos(tilt), st = Math.sin(tilt);
+    let hit = -1;
+    const live = !state.frozen;
+
+    planes.forEach((p, i) => {
+      const u = p.u;
+      const ti = expoOut(clamp((state.intro * 1.5 - i * .05), 0, 1));
+      u.uR.value = L.R * (.25 + .75 * ti);
+      u.uTheta.value = p.theta0 + ringRot + (1 - ti) * 1.6;
+      u.uTilt.value = tilt; u.uRY.value = L.ry; u.uRZ.value = L.rz;
+      u.uRW.value = p.planeA * L.rh * (.4 + .6 * ti); u.uRH.value = L.rh * (.4 + .6 * ti);
+      const dist = Math.abs(i - aSmooth), near = clamp(dist, 0, 1);
+      const sc = 1 - .2 * near;
+      u.uSW.value = p.planeA * L.sh * sc; u.uSH.value = L.sh * sc;
+      u.uSX.value = p.sx0 - centre; u.uSY.value = L.sy + state.exit;
+      u.uBend.value = REDUCE ? 0 : bend;
+      const mi = ease(clamp(mx * 1.35 - (i / N) * .35, 0, 1));
+      u.uMix.value = mi;
+      p.gray = lerp(p.gray, mi > .5 ? near : 0, .1); u.uGray.value = p.gray;
+      u.uTime.value = T;
+      u.uRadius.value = lerp(10, 18, mi);
+      u.uAlpha.value = (i === state.hide ? 0 : 1) * ti * state.alpha * (mi > .5 ? (1 - .5 * near) * clamp(2.2 - dist * .5, 0, 1) : 1);
+      const th = u.uTheta.value;
+      const rz0 = u.uR.value * Math.cos(th);
+      const rx = u.uR.value * Math.sin(th), ry = -rz0 * st + L.ry, rz = rz0 * ct + L.rz;
+      const X = lerp(rx, u.uSX.value, mi), Y = lerp(ry, u.uSY.value, mi), Z = lerp(rz, 0, mi);
+      p.z = Z;
+      const persp = camZ / (camZ - Z);
+      p.cx = vw / 2 + X * persp; p.cy = vh / 2 - Y * persp;
+      const face = lerp(Math.abs(Math.cos(th)), 1, mi);
+      const W = lerp(u.uRW.value, u.uSW.value, mi), H = lerp(u.uRH.value, u.uSH.value, mi);
+      p.hw = W * .5 * persp * face; p.hh = H * .5 * persp;
+      u.uSize.value.set(W, H);
+      const front = Math.cos(th) > .1 || mi > .5;
+      const inside = live && front && Math.abs(mouse.x - p.cx) < p.hw && Math.abs(mouse.y - p.cy) < p.hh;
+      if (inside && state.alpha > .5 && u.uAlpha.value > .3 && (hit < 0 || p.z > planes[hit].z)) hit = i;
+    });
+    hovered = hit;
+    planes.forEach((p, i) => {
+      p.hover = lerp(p.hover, i === hit ? 1 : 0, .1); p.u.uHover.value = REDUCE ? 0 : p.hover;
+      if (i === hit) p.u.uMouse.value.set(clamp((mouse.x - (p.cx - p.hw)) / (2 * p.hw), 0, 1), clamp(1 - (mouse.y - (p.cy - p.hh)) / (2 * p.hh), 0, 1));
+      p.u.uLift.value = lerp(p.u.uLift.value, i === hit ? 40 : 0, .1);
+    });
+    [...planes].sort((a, b) => a.z - b.z).forEach((p, k) => p.m.renderOrder = k);
+    renderer.render(scene, camera);
+  }
+  const rectOf = i => { const p = planes[i]; return { x: p.cx - p.hw, y: p.cy - p.hh, w: p.hw * 2, h: p.hh * 2 }; };
+  return { frame, resize, state, rectOf, snap: () => { snap = true; }, get hovered() { return hovered; }, get activeIndex() { return clamp(Math.round(aSmooth), 0, N - 1); } };
+}
+
+/* ======================================================================
+   BOOT
+   ====================================================================== */
+const loaderEl = document.getElementById('loader'), loadBar = document.getElementById('loadBar'), loadNum = document.getElementById('loadNum'), loadNote = document.getElementById('loadNote');
+let shownPct = 0, targetPct = 4;
+const counter = setInterval(() => { shownPct += (targetPct - shownPct) * .14; loadNum.textContent = Math.round(shownPct); loadBar.style.transform = `scaleX(${shownPct / 100})`; }, 30);
+let texDone = 0;
+const onTex = (n, total) => { texDone = n; targetPct = Math.max(targetPct, 10 + 85 * n / total); loadNote.textContent = `Loading work ${n}/${total}`; };
+
+if (!window.gsap) { clearInterval(counter); loaderEl.remove(); root.classList.add('no-gl'); return; }
+gsap.registerPlugin(ScrollTrigger);
+const reel = createReel(onTex);
+if (!reel) root.classList.add('no-gl');
+if (!CSS.supports('mix-blend-mode', 'difference')) root.classList.add('no-blend');
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const texReady = new Promise(res => { const c = setInterval(() => { if (!reel || texDone >= N) { clearInterval(c); res(); } }, 60); });
+const fontsReady = Promise.all([document.fonts.load('600 100px "Funnel Display"'), document.fonts.load('400 16px "Funnel Sans"')]).catch(() => {});
+Promise.race([Promise.all([texReady, fontsReady, wait(REDUCE ? 100 : 900)]), wait(6000)]).then(start);
+
+function start() {
+  targetPct = 100;
+  let lenis = null;
+  if (window.Lenis && !REDUCE) { lenis = new Lenis({ lerp: .09, smoothWheel: true }); lenis.on('scroll', ScrollTrigger.update); window.__lenis = lenis; }
+  gsap.ticker.lagSmoothing(0);
+  gsap.ticker.add((time, dms) => { if (lenis) lenis.raf(time * 1000); if (reel) reel.frame(Math.min(dms, 50) / 1000); });
+  const nativeTo = (y, instant) => window.scrollTo({ top: typeof y === 'number' ? y : y.getBoundingClientRect().top + scrollY, behavior: instant || REDUCE ? 'auto' : 'smooth' });
+  const scrollTo = (y, d = 1.4) => lenis ? lenis.scrollTo(y, { duration: d, easing: t => 1 - Math.pow(1 - t, 4) }) : nativeTo(y);
+  const jumpTo = y => lenis ? lenis.scrollTo(y, { immediate: true, force: true }) : nativeTo(y, true);
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-to]'); if (!a) return;
+    const el = document.querySelector(a.getAttribute('href')); if (!el) return;
+    e.preventDefault();
+    if (caseOpen) closeCase(() => scrollTo(el)); else scrollTo(el);
+  });
+
+  document.querySelectorAll('[data-chars]').forEach(el => { el._parts = split(el); });
+
+  /* intro */
+  const tl = gsap.timeline({ delay: .25 });
+  tl.add(() => { clearInterval(counter); loadNum.textContent = '100'; loadBar.style.transform = 'scaleX(1)'; })
+    .to('.loader-mark', { y: -20, opacity: 0, duration: .5, ease: 'power3.in' })
+    .to(loaderEl, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut' }, '-=.15')
+    .add(() => loaderEl.remove())
+    .from(document.getElementById('heroName')._parts, { yPercent: 105, duration: 1.4, stagger: .06, ease: 'expo.out' }, '-=.6')
+    .from('#nav > *', { y: -24, opacity: 0, duration: .9, stagger: .07, ease: 'expo.out' }, '<.2')
+    .from('[data-intro] > *', { y: 30, opacity: 0, duration: 1, stagger: .08, ease: 'expo.out' }, '<.1');
+  if (reel) gsap.to(reel.state, { intro: 1, duration: REDUCE ? .01 : 2.8, ease: 'power2.out', delay: 1.1 });
+
+  /* reveals */
+  document.querySelectorAll('.side [data-chars], .contact [data-chars]').forEach(el => {
+    gsap.from(el._parts, { yPercent: 110, duration: 1.2, stagger: .03, ease: 'expo.out', scrollTrigger: { trigger: el, start: 'top 88%' } });
+  });
+  document.querySelectorAll('[data-scrub]').forEach(el => {
+    const parts = split(el, true);
+    gsap.fromTo(parts, { opacity: .14 }, { opacity: 1, stagger: .1, ease: 'none', scrollTrigger: { trigger: el, start: 'top 80%', end: 'bottom 45%', scrub: true } });
+  });
+  document.querySelectorAll('[data-fade], .rows > li, .c-grid > *').forEach(el => gsap.from(el, { y: 40, opacity: 0, duration: 1.1, ease: 'expo.out', scrollTrigger: { trigger: el, start: 'top 92%' } }));
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const o = { v: 0 }, to = +el.dataset.count;
+    gsap.fromTo(o, { v: 0 }, { v: to, duration: 2, ease: 'power3.out', onUpdate: () => el.textContent = Math.round(o.v), scrollTrigger: { trigger: '#stats', start: 'top 85%' } });
+  });
+
+  /* side project panels */
+  document.querySelectorAll('button.row').forEach(btn => {
+    const panel = document.getElementById(btn.getAttribute('aria-controls'));
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      gsap.killTweensOf(panel);
+      if (open) {
+        panel.hidden = false;
+        gsap.fromTo(panel, { height: 0 }, { height: 'auto', duration: REDUCE ? 0 : .8, ease: 'expo.inOut', onComplete: () => ScrollTrigger.refresh() });
+        gsap.fromTo(panel.querySelectorAll('.panel-in > *, .sub'), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .8, stagger: .05, ease: 'expo.out', delay: .2 });
+      } else {
+        gsap.to(panel, { height: 0, duration: REDUCE ? 0 : .6, ease: 'expo.inOut', onComplete: () => { panel.hidden = true; panel.style.height = ''; ScrollTrigger.refresh(); } });
+      }
+    });
+  });
+
+  /* nav state (created after the pin so positions include its spacer) */
+  const navLinks = [...document.querySelectorAll('.nav ul a')];
+  const navState = () => ['work', 'about', 'contact'].forEach(id => ScrollTrigger.create({ trigger: '#' + id, start: 'top 50%', end: 'bottom 50%',
+    onToggle: s => { if (s.isActive) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id)); },
+    onLeaveBack: () => { if (id === 'work') navLinks.forEach(a => a.classList.remove('on')); } }));
+
+  /* ---------- case pages ---------- */
+  const caseEl = document.getElementById('case'), caseBg = document.getElementById('caseBg'), caseScroll = document.getElementById('caseScroll'),
+    caseHero = document.getElementById('caseHero'), caseImg = document.getElementById('caseImg'), caseBody = document.getElementById('caseBody'),
+    caseCount = document.getElementById('caseCount');
+  let caseOpen = false, caseIdx = -1, busy = false, lastFocus = null;
+  function chartHTML(c) {
+    const pct = v => (v / c.max * 100).toFixed(2) + '%';
+    const best = Math.max(...c.rows.map(r => r[1]));
+    return `<div class="chart"><div class="chart-plot">${c.rows.map((r, k) => `<div class="chart-row${r[1] === best ? ' best' : ''}${k === 0 ? ' base' : ''}"><span>${esc(r[0])}</span><div class="chart-track"><div class="chart-bar" style="width:${pct(r[1])}"></div>${k === 0 ? `<div class="chart-ref" style="left:${pct(c.ref[0])}"><em>${esc(c.ref[1])}</em></div>` : `<div class="chart-ref" style="left:${pct(c.ref[0])}"></div>`}</div><b>${r[1].toFixed(1)}</b></div>`).join('')}</div>
+      <div class="chart-axis"><span></span><div>${[0, 10, 20, 30, 40, 50].map(v => `<span>${v}</span>`).join('')}</div><span>${esc(c.unit)}</span></div>
+      <p class="chart-src">${esc(c.source)}</p></div>`;
+  }
+  function caseHTML(i) {
+    const p = P[i], c = p.case, nx = P[(i + 1) % N];
+    const st = starText(p);
+    const facts = c.facts.concat(c.license ? [{ k: '许可', v: c.license }] : []);
+    return `
+      <div class="case-head" data-in>
+        <div class="case-meta">${chips(p)}<span>${esc(p.cn)}</span>${st ? `<span>${esc(st)}</span>` : ''}</div>
+        <h2 id="caseTitle">${esc(p.name)}</h2>
+        <p class="case-tag">${esc(c.tagline || p.desc)}</p>
+      </div>
+      <div class="case-cols" data-in>
+        <p class="case-intro">${esc(c.intro || p.desc)}</p>
+        <aside class="case-aside">
+          <dl class="facts">${facts.map(f => `<div><dt>${esc(f.k)}</dt><dd>${esc(f.v)}</dd></div>`).join('')}</dl>
+          <div class="tags">${(c.stack || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+          <div class="w-links">${p.links.map(([l, h], k) => `<a class="btn${k ? ' ghost' : ''}" href="${h}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join('')}</div>
+          ${c.note ? `<p class="case-note">${esc(c.note)}</p>` : ''}
+        </aside>
+      </div>
+      ${c.contribution ? `<section class="sec" data-in><div class="sec-h"><h3>我做了什么</h3><span>${p.role === 'Fork' ? '在上游基础上' : 'Contributor'}</span></div><div class="contrib">${c.contribution.map(t => `<p>${esc(t)}</p>`).join('')}</div></section>` : ''}
+      ${c.chart ? `<section class="sec" data-in><div class="sec-h"><h3>${esc(c.chart.title)}</h3><span>${esc(c.chart.unit)}，越高越好</span></div>${chartHTML(c.chart)}</section>` : ''}
+      <section class="sec" data-in><div class="sec-h"><h3>能做什么</h3><span>${c.features.length} 项</span></div>
+        <div class="feat">${c.features.map(f => `<div><h4>${esc(f.t)}</h4><p>${esc(f.d)}</p></div>`).join('')}</div></section>
+      <section class="sec" data-in><div class="sec-h"><h3>怎么开始</h3><span>详细步骤见 GitHub README</span></div>
+        <ol class="steps">${c.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>
+      ${c.gallery.length ? `<section class="sec" data-in><div class="sec-h"><h3>截图</h3><span>来自项目仓库</span></div>
+        <div class="gallery">${c.gallery.map(g => `<figure><img src="${g.src}" alt="${esc(g.alt)}" width="${g.w}" height="${g.h}" loading="lazy" decoding="async"><figcaption>${esc(g.alt)}</figcaption></figure>`).join('')}</div></section>` : ''}
+      <button class="case-next" type="button" data-next="${(i + 1) % N}" data-in>
+        <div><small>Next project</small><strong>${esc(nx.name)}</strong><em>${esc(nx.cn)}</em></div>
+        <img src="${nx.tex}" alt="">
+      </button>`;
+  }
+  function fillCase(i) {
+    caseIdx = i;
+    caseImg.src = P[i].tex; caseImg.alt = P[i].name;
+    caseImg.width = 1600; caseImg.height = Math.round(1600 / P[i].a);
+    caseBody.innerHTML = caseHTML(i);
+    caseBody.style.display = 'grid'; caseBody.style.gap = 'clamp(56px,9vh,104px)';
+    caseCount.textContent = `${pad2(i + 1)} / ${pad2(N)}`;
+    caseBody.querySelectorAll('.chart-bar').forEach((b, k) => gsap.from(b, { scaleX: 0, duration: 1.3, ease: 'expo.out', delay: .1 + k * .08, scrollTrigger: { trigger: b, scroller: caseScroll, start: 'top 92%' } }));
+    caseBody.querySelectorAll('.sec, .case-next').forEach(s => gsap.from(s, { y: 50, opacity: 0, duration: 1.1, ease: 'expo.out', scrollTrigger: { trigger: s, scroller: caseScroll, start: 'top 90%' } }));
+  }
+  function killCaseTriggers() { ScrollTrigger.getAll().forEach(t => { if (t.scroller === caseScroll) t.kill(); }); }
+  function setHash(h) { try { history.replaceState(null, '', h); } catch (e) {} }
+  function openCase(i) {
+    if (busy) return;
+    if (caseOpen) return switchCase(i);
+    busy = true; caseOpen = true; lastFocus = document.activeElement;
+    killCaseTriggers(); fillCase(i);
+    caseEl.classList.add('open'); caseEl.setAttribute('aria-hidden', 'false');
+    lenis && lenis.stop(); if (!lenis) document.body.style.overflow = 'hidden';
+    if (reel) reel.state.frozen = true;
+    caseScroll.scrollTop = 0;
+    tip.classList.remove('on'); root.style.cursor = '';
+    const fr = caseHero.getBoundingClientRect();
+    const r = reel && reel.state.mix > .5 ? reel.rectOf(i) : null;
+    const t = gsap.timeline({ onComplete: () => { busy = false; document.getElementById('caseClose').focus({ preventScroll: true }); } });
+    t.to(caseBg, { opacity: 1, duration: REDUCE ? .01 : .7, ease: 'power2.out' }, 0);
+    if (r && r.w > 20 && !REDUCE) {
+      reel.state.hide = i;
+      gsap.set(caseHero, { x: r.x - fr.left, y: r.y - fr.top, scaleX: r.w / fr.width, scaleY: r.h / fr.height });
+      t.to(caseHero, { x: 0, y: 0, scaleX: 1, scaleY: 1, duration: 1.15, ease: 'expo.inOut' }, 0);
+    } else t.fromTo(caseHero, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .9, ease: 'expo.out' }, .1);
+    t.fromTo(caseBody.querySelectorAll('[data-in]'), { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1, stagger: .07, ease: 'expo.out', clearProps: 'transform' }, REDUCE ? 0 : .6);
+    t.fromTo('.case-bar', { opacity: 0 }, { opacity: 1, duration: .6 }, .4);
+    setHash('#' + P[i].id);
+  }
+  function switchCase(i) {
+    if (busy) return; busy = true;
+    gsap.to([caseHero, caseBody], { opacity: 0, y: -30, duration: .35, ease: 'power2.in', onComplete: () => {
+      killCaseTriggers(); caseScroll.scrollTop = 0; fillCase(i);
+      if (reel) { jumpTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2); reel.snap(); }
+      gsap.fromTo(caseHero, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .9, ease: 'expo.out' });
+      gsap.fromTo(caseBody, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .9, ease: 'expo.out', delay: .08, onComplete: () => { busy = false; } });
+      setHash('#' + P[i].id);
+    } });
+  }
+  function closeCase(after) {
+    if (!caseOpen || busy) return; busy = true;
+    const i = caseIdx, fr = caseHero.getBoundingClientRect();
+    const r = reel && reel.state.mix > .5 ? reel.rectOf(i) : null;
+    const t = gsap.timeline({ onComplete: () => {
+      killCaseTriggers();
+      caseEl.classList.remove('open'); caseEl.setAttribute('aria-hidden', 'true');
+      gsap.set([caseHero, caseBody, caseBg, '.case-bar'], { clearProps: 'all' });
+      if (reel) { reel.state.hide = -1; reel.state.frozen = false; }
+      lenis && lenis.start(); document.body.style.overflow = '';
+      caseOpen = false; busy = false; setHash('#work');
+      if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+      after && after();
+    } });
+    t.to([caseBody, '.case-bar'], { opacity: 0, duration: .3, ease: 'power2.in' }, 0);
+    const visible = fr.bottom > 60 && fr.top < innerHeight;
+    if (r && visible && !REDUCE) {
+      t.to(caseHero, { x: r.x - fr.left, y: r.y - fr.top, scaleX: r.w / fr.width, scaleY: r.h / fr.height, duration: .95, ease: 'expo.inOut' }, 0);
+      t.to(caseBg, { opacity: 0, duration: .6, ease: 'power2.inOut' }, .3);
+    } else {
+      t.to(caseHero, { opacity: 0, duration: .3 }, 0);
+      t.to(caseBg, { opacity: 0, duration: .5 }, .1);
+    }
+  }
+  document.getElementById('caseClose').addEventListener('click', () => closeCase());
+  document.getElementById('caseNextBtn').addEventListener('click', () => openCase((caseIdx + 1) % N));
+  caseBody.addEventListener('click', e => { const b = e.target.closest('[data-next]'); if (b) openCase(+b.dataset.next); });
+  addEventListener('keydown', e => {
+    if (!caseOpen) return;
+    if (e.key === 'Escape') closeCase();
+    if (e.key === 'Tab') {   // keep focus inside the case page
+      const f = [...caseEl.querySelectorAll('a[href],button')].filter(x => x.offsetParent !== null);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  document.getElementById('wList').addEventListener('click', e => { const b = e.target.closest('[data-case]'); if (b) openCase(+b.dataset.case); });
+
+  /* pointer label beside the real cursor */
+  const tip = document.getElementById('tip');
+  let overEl = null;
+  if (FINE) {
+    const qx = gsap.quickTo(tip, 'left', { duration: .25, ease: 'power3.out' }), qy = gsap.quickTo(tip, 'top', { duration: .25, ease: 'power3.out' });
+    addEventListener('pointermove', e => { qx(e.clientX); qy(e.clientY); }, { passive: true });
+    document.addEventListener('pointerover', e => { overEl = e.target.closest('[data-tip],a,button'); });
+    gsap.ticker.add(() => {
+      let label = '';
+      if (caseOpen) label = '';
+      else if (overEl && overEl.dataset.tip) label = overEl.dataset.tip;
+      else if (!overEl && reel && reel.hovered >= 0) {
+        const h = reel.hovered;
+        label = reel.state.mix < .5 ? P[h].name : (h === reel.activeIndex ? 'Details' : P[h].name);
+      }
+      tip.classList.toggle('on', !!label);
+      if (label && tip.textContent !== label) tip.textContent = label;
+      const pointer = !caseOpen && !overEl && reel && reel.hovered >= 0;
+      root.style.cursor = pointer ? 'pointer' : '';
+    });
+  }
+
+  /* magnetic buttons */
+  if (FINE) document.addEventListener('pointermove', e => {
+    const b = e.target.closest && e.target.closest('.btn,.nav .gh'); if (!b) return;
+    const r = b.getBoundingClientRect();
+    gsap.to(b, { x: (e.clientX - r.left - r.width / 2) * .22, y: (e.clientY - r.top - r.height / 2) * .32, duration: .4, ease: 'power3.out' });
+    if (!b._mag) { b._mag = 1; b.addEventListener('pointerleave', () => gsap.to(b, { x: 0, y: 0, duration: .8, ease: 'elastic.out(1,.45)' })); }
+  });
+
+  if (!reel) { navState(); weather(0); ScrollTrigger.refresh(); openFromHash(); return; }
+
+  /* ---------- reel choreography ---------- */
+  const wUi = document.getElementById('wUi'), wBar = document.getElementById('wBar');
+  const pin = ScrollTrigger.create({
+    trigger: '#work', start: 'top top', end: () => '+=' + (N - 1) * innerHeight * .72, pin: true, anticipatePin: 1,
+    onUpdate: s => { reel.state.active = s.progress; wBar.style.transform = `scaleX(${s.progress})`; }
+  });
+  ScrollTrigger.create({
+    trigger: '#work', start: 'top bottom', end: 'top top',
+    onUpdate: s => { reel.state.mix = s.progress; }, onLeaveBack: () => reel.state.mix = 0, onLeave: () => reel.state.mix = 1
+  });
+  navState();
+
+  const wTitle = document.getElementById('wTitle'), wCn = document.getElementById('wCn'), wDesc = document.getElementById('wDesc'), wTags = document.getElementById('wTags'),
+    wLinks = document.getElementById('wLinks'), wNow = document.getElementById('wNow'), wStars = document.getElementById('wStars');
+  const idxBtns = [...document.querySelectorAll('#wIndex button')];
+  let current = -1;
+  function fill(i) {
+    const p = P[i];
+    wTitle.textContent = p.name; wTitle._parts = split(wTitle);
+    wCn.innerHTML = `<span>${esc(p.cn)}</span>` + chips(p);
+    wDesc.textContent = p.desc;
+    wTags.innerHTML = p.tags.map(t => `<span>${esc(t)}</span>`).join('');
+    wLinks.innerHTML = `<button class="btn" type="button" data-case="${i}">Details</button>` + p.links.map(([l, h]) => `<a class="btn ghost" href="${h}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join('');
+    wNow.textContent = pad2(i + 1);
+    wStars.textContent = starText(p);
+    idxBtns.forEach((b, k) => b.classList.toggle('on', k === i));
+  }
+  wLinks.addEventListener('click', e => { const b = e.target.closest('[data-case]'); if (b) openCase(+b.dataset.case); });
+  function setActive(i) {
+    if (i === current) return;
+    current = i;
+    gsap.killTweensOf([wCn, wDesc, wTags, wLinks]);
+    gsap.killTweensOf(wTitle.querySelectorAll('.si'));
+    gsap.to(wTitle.querySelectorAll('.si'), { yPercent: -105, duration: .3, stagger: .01, ease: 'power3.in' });
+    gsap.to([wCn, wDesc, wTags, wLinks], { opacity: 0, y: -8, duration: .25, ease: 'power2.in', onComplete: () => {
+      if (current !== i) return;
+      fill(i);
+      gsap.fromTo(wTitle._parts, { yPercent: 105 }, { yPercent: 0, duration: .9, stagger: .02, ease: 'expo.out' });
+      gsap.fromTo([wCn, wDesc, wTags, wLinks], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .7, stagger: .05, ease: 'expo.out' });
+    } });
+  }
+  fill(0); current = 0;
+  const goTo = i => scrollTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2, 1.6);
+  idxBtns.forEach(b => b.addEventListener('click', () => goTo(+b.dataset.i)));
+
+  /* settle on the nearest project once scrolling stops inside the reel */
+  let idle;
+  const settle = () => {
+    if (caseOpen || !lenis || lenis.isScrolling === 'smooth') return;
+    const y = scrollY; if (y <= pin.start + 4 || y >= pin.end - 4) return;
+    const step = (pin.end - pin.start) / (N - 1), k = Math.round((y - pin.start) / step), target = pin.start + k * step + 2;
+    if (Math.abs(target - y) > 6) lenis.scrollTo(target, { duration: .9, easing: t => 1 - Math.pow(1 - t, 3) });
+  };
+  if (lenis) lenis.on('scroll', () => { clearTimeout(idle); idle = setTimeout(settle, 220); });
+
+  gsap.ticker.add(() => {
+    const exitPx = Math.max(0, scrollY - pin.end);
+    reel.state.exit = exitPx;
+    reel.state.alpha = clamp(1 - exitPx / (innerHeight * .9), 0, 1);
+    const m = clamp((reel.state.mix - .2) / .65, 0, 1);
+    weather(m * m * (3 - 2 * m) * clamp(1 - exitPx / (innerHeight * .7), 0, 1));
+    wUi.style.opacity = clamp((reel.state.mix - .75) * 4, 0, 1) * reel.state.alpha;
+    wUi.style.visibility = wUi.style.opacity > 0.02 ? 'visible' : 'hidden';
+    if (!caseOpen) setActive(reel.state.mix > .7 ? reel.activeIndex : 0);
+  });
+
+  /* clicking a plane: in the ring it jumps to that project; the centred reel cover opens its case page */
+  addEventListener('click', e => {
+    if (caseOpen || e.target.closest('a,button,.case')) return;
+    const h = reel.hovered; if (h < 0) return;
+    if (reel.state.mix > .5 && h === reel.activeIndex) openCase(h);
+    else goTo(h);
+  });
+
+  function openFromHash() {
+    const id = (location.hash || '').slice(1);
+    const i = P.findIndex(p => p.id === id);
+    if (i < 0) return;
+    setTimeout(() => {
+      if (reel && pin) { jumpTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2); reel.snap(); }
+      setTimeout(() => openCase(i), 120);
+    }, 1900);
+  }
+  openFromHash();
+
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { reel.resize(); ScrollTrigger.refresh(); }, 150); });
+  ScrollTrigger.refresh();
+}
+})();
+</script>
+
+</body>
+</html>

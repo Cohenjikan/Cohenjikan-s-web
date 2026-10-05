@@ -10,6 +10,8 @@ Read them in this order to reconstruct full history:
 3. `CLAUDE_DEV_LOG.md` — BackgroundSwitcher Rewrite entry
 4. `CODEX_DEV_LOG.md` — all 6 codex entries (Lanyard / footer / textures / merge)
 5. `CLAUDE_DEV_LOG.md` — Lanyard Round 2 onward (resumed from codex)
+6. `CLAUDE_DEV_LOG.md` — 2026-10-06 Static Redesign (last entry; supersedes the
+   React-specific handoff notes above it)
 
 ---
 
@@ -775,3 +777,45 @@ README:
   `185.199.110.153`, `185.199.111.153`. `www` CNAME →
   `cohenjikan.github.io` (optional). These were already in place from the
   legacy site as of 2026-05-16.
+
+---
+
+## 2026-10-06 Static Redesign (replaces the React SPA)
+
+### Goal
+- Replace the react-bits SPA with a new design the user approved through several
+  rounds of review: a single static page where the project covers orbit the name
+  on a 3D ring, unroll into a scrolling reel, and open into per-project case pages.
+- Sync the project list with github.com/Cohenjikan, add BTR (contributor), switch
+  the contact email to cohenjikan@gmail.com, and add brandyxue.com to the friends links.
+
+### Investigation Notes
+- `main` has no branch protection and no rulesets; pushes deploy through
+  `.github/workflows/deploy.yml` (Pages source is GitHub Actions, CNAME `cohenjikan.com`).
+- Old public routes were `/projects/<slug>` and `/credits`; other sites (melboard.org)
+  link to the root, so the new `404.html` maps old project slugs to `/#<id>`.
+
+### Major Changes
+- Removed the Vite/React/TypeScript app (`src/`, `public/`, `index.html`, package
+  and build config). It stays in history; last commit of the old app is `fb43ab5`.
+- New `site/` folder is the whole deployable: `index.html` (markup, CSS, JS and the
+  project data in `const P`), `404.html`, `CNAME`, `favicon.svg`, `tex/` (2:1 covers)
+  and `tex/case/` (case-page screenshots and GIFs taken from each project's repo).
+- `deploy.yml` now uploads `site/` directly; there is no npm install or build step.
+- Covers were redrawn as one family (dark tinted field, name top-left, tags
+  bottom-left, flat screenshots on the right) and rendered from HTML with headless
+  Edge using the site's fonts (Funnel Display, Funnel Sans, Noto Sans SC).
+- `.claude/launch.json` now serves `site/` with `python -m http.server 5173`.
+
+### Content notes
+- 10 own repos plus BTR (MrTangLuyao/Bilibili-thread-ripper and -desktop), where
+  Cohen merged PR #25 and committed desktop 0.9.4.0-d1. PrimerScore Web is marked Fork.
+- Star counts show only when a repo has 50 or more stars.
+- Copy avoids the middle dot and em dashes by request.
+
+### Verification
+- Served `site/` locally: no console errors; ring, reel, case pages (open, next,
+  close, deep links like `/#btr`), side-project panels and phone width checked.
+- The in-app preview pauses rAF when hidden; frames were stepped with
+  `gsap.ticker.tick()` for checks. This is a tooling artefact, not a site bug.
+

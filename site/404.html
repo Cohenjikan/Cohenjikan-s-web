@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Cohen</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>
+  // Old React-site routes (/projects/<slug>, /credits) now live as case pages on the home page.
+  (function () {
+    var map = {
+      'poetry-cloud': 'poetry-cloud',
+      'music-master': 'musicmaster',
+      'primer-score': 'primerscore',
+      'rhythm-game-trainers': 'rhythm-doctor',
+      'claude-usage-monitor': 'claude-usage-monitor',
+      'tiny-voice-room': 'tiny-voice-room',
+      'sync-station': 'sync-station'
+    };
+    var m = location.pathname.match(/^\/projects\/([^\/?#]+)/);
+    location.replace('/' + (m && map[m[1]] ? '#' + map[m[1]] : ''));
+  })();
+</script>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#ECEBEF;color:#131218;font:16px/1.5 system-ui,sans-serif}a{color:inherit}</style>
+</head>
+<body>
+<p>页面已经搬家了，<a href="/">回到首页</a>。</p>
+</body>
+</html>
