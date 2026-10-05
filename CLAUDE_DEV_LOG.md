@@ -819,3 +819,25 @@ README:
 - The in-app preview pauses rAF when hidden; frames were stepped with
   `gsap.ticker.tick()` for checks. This is a tooling artefact, not a site bug.
 
+---
+
+## 2026-10-06 Hero Rework: Covers Through the Letters
+
+### Goal
+- The 3D ring hero felt out of place once the covers and type went flat. Replace it with
+  a flat hero that keeps the impact.
+
+### Major Changes
+- The reel now renders with an orthographic camera in CSS pixels; there is no perspective
+  anywhere on the page.
+- Hero: the name is sized to fill the width (`buildMask()` fits the font, draws the word
+  into a canvas mask and finds the thickest stroke of the C with a chamfer distance pass).
+  The covers flow behind the mask as one overlapping, feathered row; in the hero they are
+  blurred via mip-level bias and lifted/saturated so the letters read as one soft colour
+  field. Hovering a letter sharpens that cover.
+- Scroll: the hero is pinned for 90% of a viewport. The row settles so Poetry Cloud sits
+  under the C, the mask zooms through the C (up to 90x) while the cover sharpens and grows
+  to a full-bleed frame, then it shrinks into the reel. `reel.state.mix` is now derived from
+  `scrollY / pin.start` instead of a separate ScrollTrigger.
+- The reel's velocity arch (a 3D bend) was removed.
+

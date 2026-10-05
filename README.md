@@ -2,8 +2,10 @@
 
 Personal site for Cohen. Live at <https://cohenjikan.com>.
 
-Since October 2026 the site is a single static page: the project covers orbit the name on a
-3D ring (three.js), unroll into a scrolling reel, and each project opens into its own case page.
+Since October 2026 the site is a single static page: the name fills the hero and the project
+covers stream through its letters as soft colour (three.js, flat orthographic). Scrolling dives
+through the C into a full-bleed cover that becomes a scrolling reel, and each project opens into
+its own case page.
 There is no build step. GSAP, ScrollTrigger, three.js and Lenis load from public CDNs.
 
 ---

@@ -77,15 +77,17 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 .nav .gh{font-size:14px;font-weight:500;text-decoration:none;padding:10px 16px;border-radius:999px;border:1px solid var(--line);transition:border-color .3s}
 .nav .gh:hover{border-color:var(--fg)}
 
-/* hero */
-.hero{position:relative;min-height:100vh;min-height:100svh;display:grid;grid-template-rows:1fr auto;padding-block:calc(env(safe-area-inset-top,0px) + 90px) 28px}
-.hero h1{margin:0;align-self:center;justify-self:center;font-family:var(--f-display);font-weight:600;font-size:clamp(92px,20vw,340px);line-height:.8;letter-spacing:-.065em;color:#fff;mix-blend-mode:difference;text-align:center;padding-right:.04em}
-.no-blend .hero h1{color:var(--fg);mix-blend-mode:normal}
-.hero-foot{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:24px;align-items:end}
+/* hero: the name fills the width; WebGL streams the project covers through its letters */
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-rows:minmax(0,1fr) auto;padding-block:calc(env(safe-area-inset-top,0px) + 76px) 26px}
+.hero .word{margin:0;align-self:center;justify-self:center;font-family:var(--f-display);font-weight:800;font-size:20vw;line-height:1;letter-spacing:-.065em;white-space:nowrap;color:var(--fg)}
+.gl-on .hero .word{color:transparent}
+.hero-foot{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:24px;align-items:end}
 .hero-foot p{margin:0}
-.lede{font-family:var(--f-display);font-weight:400;font-size:clamp(18px,1.6vw,24px);line-height:1.3;letter-spacing:-.01em;max-width:28ch}
+.lede{font-family:var(--f-display);font-weight:400;font-size:clamp(17px,1.4vw,22px);line-height:1.3;letter-spacing:-.01em;max-width:30ch}
 .lede span{color:var(--soft)}
-.hero-cn{font-size:14px;color:var(--soft);letter-spacing:.04em;justify-self:center;text-align:center}
+.hero-cn{display:block;margin-top:10px;font-family:var(--f-body);font-size:14px;letter-spacing:.04em}
+.now{justify-self:center;display:flex;gap:10px;align-items:baseline;font-size:13px;color:var(--soft);white-space:nowrap}
+.now b{font-family:var(--f-display);font-weight:500;font-size:20px;letter-spacing:-.02em;color:var(--fg)}
 .scroll-hint{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:500}
 .scroll-hint i{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-style:normal;animation:bob 2.4s var(--ease) infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
@@ -252,7 +254,7 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 @media (max-width:820px){
   .nav ul{display:none}
   .hero-foot{grid-template-columns:minmax(0,1fr) auto}
-  .hero-cn{display:none}
+  .now{display:none}
   .w-bottom{grid-template-columns:minmax(0,1fr)}
   .w-count{display:none}
   .w-stars{text-align:left;margin:0}
@@ -296,10 +298,10 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 
 <main>
   <section id="hero" class="hero pad">
-    <h1 id="heroName" data-chars>Cohen</h1>
+    <h1 id="heroName" class="word">Cohen</h1>
     <div class="hero-foot" data-intro>
-      <p class="lede">Developer &amp; creator. <span>Building digital experiences that merge technical precision with fluid aesthetics.</span></p>
-      <p class="hero-cn">独立开发者，做了十个开源项目</p>
+      <p class="lede">Developer &amp; creator. <span>Building digital experiences that merge technical precision with fluid aesthetics.</span><span class="hero-cn">独立开发者，做了十个开源项目</span></p>
+      <p class="now"><span>Now showing</span><b id="nowName">Poetry Cloud</b><span id="nowCn">诗云</span></p>
       <p class="scroll-hint">Scroll <i>↓</i></p>
     </div>
   </section>
@@ -1667,8 +1669,8 @@ function weather(d) {
 }
 
 /* ======================================================================
-   THE REEL: textured planes laid out in the vertex shader on a tilted
-   ring (hero) and on a flat cinematic strip (work), blended by scroll.
+   THE REEL: flat textured planes. In the hero they stream through the
+   letters of the name; scrolling dives through the C into the reel.
    ====================================================================== */
 function createReel(onProgress) {
   if (!window.THREE) return null;
@@ -1679,66 +1681,82 @@ function createReel(onProgress) {
   const DPR = Math.min(devicePixelRatio || 1, 2);
   renderer.setPixelRatio(DPR); renderer.setClearColor(0, 0);
   const scene = new THREE.Scene();
-  const FOV = 35;
-  const camera = new THREE.PerspectiveCamera(FOV, 1, 10, 20000);
-  let vw = innerWidth, vh = innerHeight, camZ = 1;
+  // flat world in CSS pixels: origin at the viewport centre, y up
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
+  let vw = innerWidth, vh = innerHeight;
+  const word = document.getElementById('heroName');
+
+  /* the name as a mask: covers only show through the letters until we zoom through them */
+  const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d', { willReadFrequently: true });
+  const maskTex = new THREE.CanvasTexture(maskCanvas);
+  maskTex.minFilter = THREE.LinearFilter; maskTex.generateMipmaps = false;
+  const M = { w: 1, h: 1, gh: 1, fx: 0, fy: 0, k: 1, data: null, cw: 1, ready: false };
 
   const vert = `
-    uniform float uMix, uR, uTheta, uTilt, uRW, uRH, uRY, uRZ, uSW, uSH, uSX, uSY, uBend, uLift;
-    varying vec2 vUv; varying float vFace;
+    uniform vec4 uRect;   // centre x, centre y, width, height in px
+    varying vec2 vUv;
     void main(){
       vUv = uv;
-      vec2 l = position.xy;
-      float th = uTheta + l.x * uRW / uR;
-      vec3 rp = vec3(uR * sin(th), l.y * uRH, uR * cos(th));
-      rp += vec3(sin(th), 0., cos(th)) * uLift * (1. - uMix);
-      float ct = cos(uTilt), st = sin(uTilt);
-      rp = vec3(rp.x, rp.y * ct - rp.z * st, rp.y * st + rp.z * ct) + vec3(0., uRY, uRZ);
-      vec3 sp = vec3(uSX + l.x * uSW, uSY + l.y * uSH, uLift * uMix);
-      float arch = sin(uv.x * 3.14159265);
-      sp.z -= uBend * arch * 140.;
-      sp.y += uBend * (uv.x - .5) * 30.;
-      vec3 p = mix(rp, sp, uMix);
-      vFace = mix(cos(th), 1., uMix);
-      gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.);
+      gl_Position = projectionMatrix * viewMatrix * vec4(uRect.xy + position.xy * uRect.zw, 0., 1.);
     }`;
   const frag = `
-    uniform sampler2D uTex; uniform float uImgA, uPlaneA, uHover, uGray, uAlpha, uTime, uRadius, uReady;
-    uniform vec2 uMouse, uSize;
-    varying vec2 vUv; varying float vFace;
+    uniform sampler2D uTex, uMask; uniform float uImgA, uPlaneA, uHover, uGray, uAlpha, uTime, uRadius, uReady, uMaskOn, uZoom, uDpr, uBlur, uFeather, uTone;
+    uniform vec2 uMouse, uWordC, uWordS, uFocal, uRes; uniform vec4 uRect;
+    varying vec2 vUv;
     float rbox(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - r; }
     void main(){
       vec2 uv = vUv;
       vec2 s = vec2(1.);
       if (uImgA > uPlaneA) s.x = uPlaneA / uImgA; else s.y = uImgA / uPlaneA;
-      vec2 tuv = (uv - .5) * s * (1. - .07 * uHover) + .5;
+      vec2 tuv = (uv - .5) * s * (1. - .05 * uHover) + .5;
       vec2 d = (uv - uMouse) * vec2(uPlaneA, 1.);
       float dist = length(d);
-      tuv += (d / (dist + 1e-4)) * sin(dist * 22. - uTime * 4.) * .005 * uHover * smoothstep(.7, 0., dist);
-      vec3 col = texture2D(uTex, tuv).rgb;
+      tuv += (d / (dist + 1e-4)) * sin(dist * 22. - uTime * 4.) * .0035 * uHover * smoothstep(.6, 0., dist);
+      vec3 col;
+      if (uBlur > .05) {   // soft colour field: high mip levels plus a few taps to hide the blocks
+        float o = .018 * uBlur;
+        col = texture2D(uTex, tuv, uBlur).rgb * 2.;
+        col += texture2D(uTex, tuv + vec2( o, o * 1.4), uBlur).rgb + texture2D(uTex, tuv + vec2(-o, o * 1.4), uBlur).rgb;
+        col += texture2D(uTex, tuv + vec2( o, -o * 1.4), uBlur).rgb + texture2D(uTex, tuv + vec2(-o, -o * 1.4), uBlur).rgb;
+        col += texture2D(uTex, tuv + vec2(o * 1.8, 0.), uBlur).rgb + texture2D(uTex, tuv - vec2(o * 1.8, 0.), uBlur).rgb;
+        col /= 8.;
+      } else col = texture2D(uTex, tuv).rgb;
       col = mix(vec3(.09, .085, .11), col, uReady);
+      // in the letters: lift and saturate the colour field so each project reads as its own light
+      float lum = dot(col, vec3(.299, .587, .114));
+      vec3 vivid = clamp(vec3(lum) + (col - lum) * 1.9, 0., 1.);
+      vivid = pow(vivid, vec3(.78)) * 1.18 + vec3(.025, .02, .045);
+      col = mix(col, vivid, uTone);
       float g = dot(col, vec3(.299, .587, .114));
       col = mix(col, vec3(g), uGray * .9) * (1. - uGray * .45);
-      float back = smoothstep(.15, -.35, vFace);
-      col *= 1. - back * .6;
-      vec2 px = (uv - .5) * uSize;
-      float sd = rbox(px, uSize * .5, uRadius);
-      float a = 1. - smoothstep(-1., .5, sd);
-      gl_FragColor = vec4(col, a * uAlpha * (1. - back * .45));
+      vec2 px = (uv - .5) * uRect.zw;
+      float a = 1. - smoothstep(-1., .5, rbox(px, uRect.zw * .5, uRadius));
+      a *= smoothstep(0., uFeather + 1e-4, uv.x);   // the leading edge melts into the cover beneath it
+      if (uMaskOn > .5) {
+        vec2 fc = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;     // css px, y down
+        vec2 q = uFocal + (fc - uFocal) / uZoom;
+        vec2 m = (q - uWordC) / uWordS + .5;
+        float inside = step(0., m.x) * step(m.x, 1.) * step(0., m.y) * step(m.y, 1.);
+        a *= inside * texture2D(uMask, vec2(m.x, 1. - m.y)).a;
+      }
+      gl_FragColor = vec4(col, a * uAlpha);
     }`;
 
-  const geo = new THREE.PlaneGeometry(1, 1, 48, 12);
+  const shared = {
+    uMask: { value: maskTex }, uMaskOn: { value: 1 }, uZoom: { value: 1 }, uDpr: { value: DPR },
+    uWordC: { value: new THREE.Vector2() }, uWordS: { value: new THREE.Vector2(1, 1) }, uFocal: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(1, 1) }
+  };
+  const geo = new THREE.PlaneGeometry(1, 1);
   const loader = new THREE.TextureLoader();
   let loaded = 0;
   const planes = P.map(p => {
     const planeA = clamp(p.a, 1.7, 2.8);
-    const u = {
-      uMix: { value: 0 }, uR: { value: 500 }, uTheta: { value: 0 }, uTilt: { value: .3 }, uRW: { value: 1 }, uRH: { value: 1 }, uRY: { value: 0 }, uRZ: { value: 0 },
-      uSW: { value: 1 }, uSH: { value: 1 }, uSX: { value: 0 }, uSY: { value: 0 }, uBend: { value: 0 }, uLift: { value: 0 },
-      uTex: { value: null }, uImgA: { value: p.a }, uPlaneA: { value: planeA }, uHover: { value: 0 }, uGray: { value: 0 }, uAlpha: { value: 0 },
-      uTime: { value: 0 }, uRadius: { value: 12 }, uReady: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) }, uSize: { value: new THREE.Vector2(100, 50) }
-    };
-    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: u, vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    const u = Object.assign({
+      uRect: { value: new THREE.Vector4(0, 0, 10, 5) }, uTex: { value: null }, uImgA: { value: p.a }, uPlaneA: { value: planeA },
+      uHover: { value: 0 }, uGray: { value: 0 }, uAlpha: { value: 0 }, uTime: { value: 0 }, uRadius: { value: 12 }, uReady: { value: 0 },
+      uMouse: { value: new THREE.Vector2(.5, .5) }, uBlur: { value: 0 }, uFeather: { value: 0 }, uTone: { value: 0 }
+    }, shared);
+    const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: u, vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false }));
     m.frustumCulled = false; scene.add(m);
     loader.load(p.tex, t => {
       t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -1746,95 +1764,160 @@ function createReel(onProgress) {
       gsap.to(u.uReady, { value: 1, duration: .8 });
       onProgress(++loaded, N);
     }, undefined, () => onProgress(++loaded, N));
-    return { m, u, planeA, hover: 0, gray: 0, cx: 0, cy: 0, hw: 0, hh: 0, z: 0, theta0: 0, sx0: 0 };
+    return { m, u, planeA, hover: 0, gray: 0, cx: 0, cy: 0, hw: 0, hh: 0, sx0: 0 };
   });
+
+  /* size the name to the width, draw it into the mask, find the thickest stroke of the C */
+  function buildMask() {
+    const cs = getComputedStyle(word);
+    const fam = cs.fontFamily, wt = cs.fontWeight;
+    const avail = word.parentElement.clientWidth - parseFloat(getComputedStyle(word.parentElement).paddingLeft) * 2;
+    mctx.font = `${wt} 100px ${fam}`;
+    try { mctx.letterSpacing = '-6.5px'; } catch (e) {}
+    const w100 = mctx.measureText('Cohen').width;
+    const fs = Math.max(60, Math.min(avail * .97 / (w100 / 100), vh * .5));
+    word.style.fontSize = fs + 'px';
+    const r = word.getBoundingClientRect();
+    const k = Math.min(3, DPR * 1.5);
+    M.w = r.width; M.h = r.height; M.k = k;
+    maskCanvas.width = Math.max(2, Math.ceil(r.width * k)); maskCanvas.height = Math.max(2, Math.ceil(r.height * k));
+    M.cw = maskCanvas.width;
+    mctx.setTransform(k, 0, 0, k, 0, 0); mctx.clearRect(0, 0, r.width, r.height);
+    mctx.font = `${wt} ${fs}px ${fam}`;
+    try { mctx.letterSpacing = (-.065 * fs) + 'px'; } catch (e) {}
+    mctx.fillStyle = '#fff'; mctx.textBaseline = 'alphabetic'; mctx.textAlign = 'left';
+    const mt = mctx.measureText('Cohen');
+    const gw = mt.actualBoundingBoxLeft + mt.actualBoundingBoxRight, gh = mt.actualBoundingBoxAscent + mt.actualBoundingBoxDescent;
+    const x0 = (r.width - gw) / 2 + mt.actualBoundingBoxLeft, y0 = (r.height - gh) / 2 + mt.actualBoundingBoxAscent;
+    mctx.fillText('Cohen', x0, y0);
+    M.gh = gh;
+    maskTex.needsUpdate = true;
+    M.data = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+    // chamfer distance transform on a coarse grid, searched inside the first letter only
+    const s = 3, gw2 = Math.ceil(r.width / s), gh2 = Math.ceil(r.height / s), D = new Float32Array(gw2 * gh2);
+    for (let y = 0; y < gh2; y++) for (let x = 0; x < gw2; x++) D[y * gw2 + x] = maskAt(x * s, y * s) > .5 ? 1e6 : 0;
+    for (let y = 0; y < gh2; y++) for (let x = 0; x < gw2; x++) { const i = y * gw2 + x; if (!D[i]) continue;
+      let v = D[i]; if (x) v = Math.min(v, D[i - 1] + 1); if (y) { v = Math.min(v, D[i - gw2] + 1); if (x) v = Math.min(v, D[i - gw2 - 1] + 1.41); if (x < gw2 - 1) v = Math.min(v, D[i - gw2 + 1] + 1.41); } D[i] = v; }
+    for (let y = gh2 - 1; y >= 0; y--) for (let x = gw2 - 1; x >= 0; x--) { const i = y * gw2 + x; if (!D[i]) continue;
+      let v = D[i]; if (x < gw2 - 1) v = Math.min(v, D[i + 1] + 1); if (y < gh2 - 1) { v = Math.min(v, D[i + gw2] + 1); if (x < gw2 - 1) v = Math.min(v, D[i + gw2 + 1] + 1.41); if (x) v = Math.min(v, D[i + gw2 - 1] + 1.41); } D[i] = v; }
+    mctx.font = `${wt} ${fs}px ${fam}`;
+    const cEnd = (x0 + mctx.measureText('C').width) / s;
+    let best = -1, bx = gw2 * .2, by = gh2 * .5;
+    for (let y = 0; y < gh2; y++) for (let x = 0; x < Math.min(gw2, cEnd); x++) { const v = D[y * gw2 + x]; if (v > best) { best = v; bx = x; by = y; } }
+    M.fx = bx * s - r.width / 2; M.fy = by * s - r.height / 2;
+    M.ready = true;
+  }
+  function maskAt(x, y) {   // css px inside the word box
+    if (!M.data) return 0;
+    const px = Math.floor(x * M.k), py = Math.floor(y * M.k);
+    if (px < 0 || py < 0 || px >= M.cw || py >= M.data.length / 4 / M.cw) return 0;
+    return M.data[(py * M.cw + px) * 4 + 3] / 255;
+  }
 
   const L = {};
   function resize() {
     vw = innerWidth; vh = innerHeight;
     renderer.setSize(vw, vh, false);
-    camZ = (vh / 2) / Math.tan(FOV / 2 * Math.PI / 180);
-    camera.aspect = vw / vh; camera.position.set(0, 0, camZ); camera.updateProjectionMatrix();
-    const small = vw < 820;
-    L.R = small ? clamp(vw * .64, 200, 380) : clamp(vw * .37, 300, 660);
-    const sumA = planes.reduce((s, p) => s + p.planeA, 0);
-    L.rh = (2 * Math.PI * L.R) / (sumA + N * .16);
-    let acc = 0; planes.forEach(p => { const w = p.planeA * L.rh; p.theta0 = (acc + w / 2) / L.R; acc += w + L.rh * .16; });
-    L.rz = -L.R * .55; L.ry = small ? vh * .02 : 0;
-    L.sh = small ? Math.min(vh * .3, (vw * .86) / 2.2) : Math.min(vh * .46, vw * .27);
-    L.gap = small ? vw * .06 : vw * .045;
+    const db = renderer.getDrawingBufferSize(new THREE.Vector2());
+    shared.uRes.value.copy(db);
+    camera.left = -vw / 2; camera.right = vw / 2; camera.top = vh / 2; camera.bottom = -vh / 2; camera.updateProjectionMatrix();
+    L.small = vw < 820;
+    L.sh = L.small ? Math.min(vh * .3, (vw * .86) / 2.2) : Math.min(vh * .46, vw * .27);
+    L.gap = L.small ? vw * .06 : vw * .045;
     let x = 0; planes.forEach(p => { const w = p.planeA * L.sh; p.sx0 = x + w / 2; x += w + L.gap; });
-    L.sy = small ? vh * .14 : vh * .07;
+    L.sy = L.small ? vh * .14 : vh * .07;
   }
   resize();
 
-  const mouse = { x: -1e4, y: -1e4, nx: 0, ny: 0, sx: 0, sy: 0 };
-  addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; mouse.ny = e.clientY / vh * 2 - 1; }, { passive: true });
+  const mouse = { x: -1e4, y: -1e4, nx: 0, sx: 0 };
+  addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; }, { passive: true });
 
   const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false };
-  let T = 0, spin = 0, aSmooth = 0, aPrev = 0, bend = 0, hovered = -1, snap = false;
+  let T = 0, aSmooth = 0, hovered = -1, snap = false, offset = 0, drift = 0, inLetters = 0;
+  const smooth01 = t => t * t * (3 - 2 * t);
 
   function frame(dt) {
-    T += dt; spin += dt * (REDUCE ? .03 : .11);
-    mouse.sx = lerp(mouse.sx, mouse.nx, .05); mouse.sy = lerp(mouse.sy, mouse.ny, .05);
+    T += dt;
+    mouse.sx = lerp(mouse.sx, mouse.nx, .05);
     const mx = clamp(state.mix, 0, 1);
-    // the reel lingers on each project: an eased staircase between integers
     const aT = state.active * (N - 1), af = Math.min(N - 2, Math.floor(aT)), fr = clamp(aT - af, 0, 1);
     const aShaped = af + ease(fr);
     aSmooth = snap ? aShaped : lerp(aSmooth, aShaped, .12); snap = false;
-    bend = lerp(bend, clamp((aSmooth - aPrev) * 18, -1.2, 1.2), .1); aPrev = aSmooth;
     const k0 = clamp(Math.floor(aSmooth), 0, N - 1), k1 = Math.min(N - 1, k0 + 1);
     const centre = lerp(planes[k0].sx0, planes[k1].sx0, aSmooth - k0);
-    const ringRot = spin + scrollY * .0007 + mouse.sx * .35;
-    const tilt = .3 + mouse.sy * .07;
-    const ct = Math.cos(tilt), st = Math.sin(tilt);
-    let hit = -1;
-    const live = !state.frozen;
+
+    // the word box, live (the hero is pinned while we zoom)
+    const r = word.getBoundingClientRect();
+    const wcx = r.left + r.width / 2, wcy = r.top + r.height / 2;
+    shared.uWordC.value.set(wcx, wcy); shared.uWordS.value.set(r.width, r.height);
+    const Fx = wcx + M.fx, Fy = wcy + M.fy;                    // focal point, screen px
+    const Fwx = Fx - vw / 2, Fwy = vh / 2 - Fy;                // focal point, world
+    shared.uFocal.value.set(Fx, Fy);
+
+    // phase A (0 to .5): settle, then dive through the C; phase B (.5 to 1): the full-bleed cover becomes the reel
+    const tA = clamp(mx / .5, 0, 1), tB = clamp((mx - .5) / .5, 0, 1);
+    const settle = smooth01(clamp(tA / .3, 0, 1));
+    const zt = ease(clamp((tA - .2) / .8, 0, 1));
+    const zb = ease(tB);
+    const zoomMask = Math.pow(90, zt * zt);
+    shared.uZoom.value = zoomMask;
+    shared.uMaskOn.value = zt < .999 && M.ready ? 1 : 0;
+
+    const heroK = 1 - settle;
+    const bh = Math.max(40, M.gh * 1.16), bw = bh * 2, pitch = lerp(bw * .62, bw + (L.small ? 6 : 12), settle), loop = N * pitch;
+    const start = -vw / 2 - bw - 4, base0 = Fwx - start;
+    const bandY = vh / 2 - wcy;
+    const still = REDUCE || state.frozen || mx > .005 || (hovered >= 0 && mx < .05);
+    drift = lerp(drift, still ? 0 : 64, .04);
+    offset += drift * dt;
+    const off = lerp(offset, Math.round(offset / loop) * loop, settle) - (L.small ? 0 : mouse.sx * 70) * (1 - settle);
+    const Gfit = Math.max(vw / bw, vh / bh) * 1.02;
+    const zc = lerp(1, Gfit, zt);
+    const c0x = Fwx, c0y = bandY;                              // plane 0 once settled
+    let hit = -1, under = -1;
 
     planes.forEach((p, i) => {
       const u = p.u;
-      const ti = expoOut(clamp((state.intro * 1.5 - i * .05), 0, 1));
-      u.uR.value = L.R * (.25 + .75 * ti);
-      u.uTheta.value = p.theta0 + ringRot + (1 - ti) * 1.6;
-      u.uTilt.value = tilt; u.uRY.value = L.ry; u.uRZ.value = L.rz;
-      u.uRW.value = p.planeA * L.rh * (.4 + .6 * ti); u.uRH.value = L.rh * (.4 + .6 * ti);
-      const dist = Math.abs(i - aSmooth), near = clamp(dist, 0, 1);
-      const sc = 1 - .2 * near;
-      u.uSW.value = p.planeA * L.sh * sc; u.uSH.value = L.sh * sc;
-      u.uSX.value = p.sx0 - centre; u.uSY.value = L.sy + state.exit;
-      u.uBend.value = REDUCE ? 0 : bend;
-      const mi = ease(clamp(mx * 1.35 - (i / N) * .35, 0, 1));
-      u.uMix.value = mi;
-      p.gray = lerp(p.gray, mi > .5 ? near : 0, .1); u.uGray.value = p.gray;
+      const ti = expoOut(clamp(state.intro * 1.5 - i * .05, 0, 1));
+      // band position (inside the letters)
+      const x0 = start + ((((i * pitch - off + base0) % loop) + loop) % loop);
+      const y0 = bandY - (1 - ti) * bh * 1.3;
+      // dive: scale about the focal point, then recentre plane 0 to fill the screen
+      const ax = Fwx + (x0 - Fwx) * zc + (0 - (Fwx + (c0x - Fwx) * zc)) * zt;
+      const ay = Fwy + (y0 - Fwy) * zc + (0 - (Fwy + (c0y - Fwy) * zc)) * zt;
+      const aw = bw * zc, ah = bh * zc;
+      // reel position
+      const dist = Math.abs(i - aSmooth), near = clamp(dist, 0, 1), sc = 1 - .2 * near;
+      const sw = p.planeA * L.sh * sc, shh = L.sh * sc, sx = p.sx0 - centre, sy = L.sy + state.exit;
+      const X = lerp(ax, sx, zb), Y = lerp(ay, sy, zb), W = lerp(aw, sw, zb), H = lerp(ah, shh, zb);
+      u.uRect.value.set(X, Y, W, H);
+      p.gray = lerp(p.gray, zb > .5 ? near : 0, .1); u.uGray.value = p.gray;
       u.uTime.value = T;
-      u.uRadius.value = lerp(10, 18, mi);
-      u.uAlpha.value = (i === state.hide ? 0 : 1) * ti * state.alpha * (mi > .5 ? (1 - .5 * near) * clamp(2.2 - dist * .5, 0, 1) : 1);
-      const th = u.uTheta.value;
-      const rz0 = u.uR.value * Math.cos(th);
-      const rx = u.uR.value * Math.sin(th), ry = -rz0 * st + L.ry, rz = rz0 * ct + L.rz;
-      const X = lerp(rx, u.uSX.value, mi), Y = lerp(ry, u.uSY.value, mi), Z = lerp(rz, 0, mi);
-      p.z = Z;
-      const persp = camZ / (camZ - Z);
-      p.cx = vw / 2 + X * persp; p.cy = vh / 2 - Y * persp;
-      const face = lerp(Math.abs(Math.cos(th)), 1, mi);
-      const W = lerp(u.uRW.value, u.uSW.value, mi), H = lerp(u.uRH.value, u.uSH.value, mi);
-      p.hw = W * .5 * persp * face; p.hh = H * .5 * persp;
-      u.uSize.value.set(W, H);
-      const front = Math.cos(th) > .1 || mi > .5;
-      const inside = live && front && Math.abs(mouse.x - p.cx) < p.hw && Math.abs(mouse.y - p.cy) < p.hh;
-      if (inside && state.alpha > .5 && u.uAlpha.value > .3 && (hit < 0 || p.z > planes[hit].z)) hit = i;
+      u.uRadius.value = lerp(lerp(heroK * 0 + 4 * settle, 0, zt), 18, zb);
+      u.uFeather.value = .38 * heroK;
+      u.uBlur.value = 4.2 * (1 - smooth01(clamp(zt * 1.4, 0, 1))) * (1 - .75 * p.hover) * (1 - zb);
+      u.uTone.value = (1 - smooth01(clamp(zt * 1.4, 0, 1))) * (1 - .6 * p.hover);
+      u.uAlpha.value = (i === state.hide ? 0 : 1) * ti * state.alpha * lerp(1, (1 - .5 * near) * clamp(2.2 - dist * .5, 0, 1), zb);
+      p.cx = vw / 2 + X; p.cy = vh / 2 - Y; p.hw = W / 2; p.hh = H / 2;
+      if (Math.abs(wcx - p.cx) < p.hw * .62) under = i;
+      let inside = !state.frozen && Math.abs(mouse.x - p.cx) < p.hw && Math.abs(mouse.y - p.cy) < p.hh;
+      if (inside && mx < .05) inside = maskAt(mouse.x - r.left, mouse.y - r.top) > .5;   // only the letters are live in the hero
+      if (inside && state.alpha > .5 && u.uAlpha.value > .3) hit = i;
     });
-    hovered = hit;
+    hovered = hit; inLetters = under;
     planes.forEach((p, i) => {
-      p.hover = lerp(p.hover, i === hit ? 1 : 0, .1); p.u.uHover.value = REDUCE ? 0 : p.hover;
+      p.hover = lerp(p.hover, i === hit ? 1 : 0, .1); p.u.uHover.value = REDUCE ? 0 : p.hover * (mx < .05 ? .6 : 1);
       if (i === hit) p.u.uMouse.value.set(clamp((mouse.x - (p.cx - p.hw)) / (2 * p.hw), 0, 1), clamp(1 - (mouse.y - (p.cy - p.hh)) / (2 * p.hh), 0, 1));
-      p.u.uLift.value = lerp(p.u.uLift.value, i === hit ? 40 : 0, .1);
     });
-    [...planes].sort((a, b) => a.z - b.z).forEach((p, k) => p.m.renderOrder = k);
+    // in the band each cover sits on the one to its left; during the dive plane 0 stays on top
+    planes.slice().sort((a, b) => a.cx - b.cx).forEach((p, k) => { p.m.renderOrder = k; });
+    if (zt > 0 && zb < 1) planes[0].m.renderOrder = N + 1;
+    if (hit >= 0 && mx > .05) planes[hit].m.renderOrder = N + 2;
     renderer.render(scene, camera);
   }
   const rectOf = i => { const p = planes[i]; return { x: p.cx - p.hw, y: p.cy - p.hh, w: p.hw * 2, h: p.hh * 2 }; };
-  return { frame, resize, state, rectOf, snap: () => { snap = true; }, get hovered() { return hovered; }, get activeIndex() { return clamp(Math.round(aSmooth), 0, N - 1); } };
+  return { frame, resize, buildMask, state, rectOf, snap: () => { snap = true; },
+    get hovered() { return hovered; }, get activeIndex() { return clamp(Math.round(aSmooth), 0, N - 1); }, get inLetters() { return inLetters; } };
 }
 
 /* ======================================================================
@@ -1850,7 +1933,6 @@ if (!window.gsap) { clearInterval(counter); loaderEl.remove(); root.classList.ad
 gsap.registerPlugin(ScrollTrigger);
 const reel = createReel(onTex);
 if (!reel) root.classList.add('no-gl');
-if (!CSS.supports('mix-blend-mode', 'difference')) root.classList.add('no-blend');
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const texReady = new Promise(res => { const c = setInterval(() => { if (!reel || texDone >= N) { clearInterval(c); res(); } }, 60); });
@@ -1859,6 +1941,7 @@ Promise.race([Promise.all([texReady, fontsReady, wait(REDUCE ? 100 : 900)]), wai
 
 function start() {
   targetPct = 100;
+  if (reel) { root.classList.add('gl-on'); reel.buildMask(); }
   let lenis = null;
   if (window.Lenis && !REDUCE) { lenis = new Lenis({ lerp: .09, smoothWheel: true }); lenis.on('scroll', ScrollTrigger.update); window.__lenis = lenis; }
   gsap.ticker.lagSmoothing(0);
@@ -1881,7 +1964,6 @@ function start() {
     .to('.loader-mark', { y: -20, opacity: 0, duration: .5, ease: 'power3.in' })
     .to(loaderEl, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut' }, '-=.15')
     .add(() => loaderEl.remove())
-    .from(document.getElementById('heroName')._parts, { yPercent: 105, duration: 1.4, stagger: .06, ease: 'expo.out' }, '-=.6')
     .from('#nav > *', { y: -24, opacity: 0, duration: .9, stagger: .07, ease: 'expo.out' }, '<.2')
     .from('[data-intro] > *', { y: 30, opacity: 0, duration: 1, stagger: .08, ease: 'expo.out' }, '<.1');
   if (reel) gsap.to(reel.state, { intro: 1, duration: REDUCE ? .01 : 2.8, ease: 'power2.out', delay: 1.1 });
@@ -2085,13 +2167,10 @@ function start() {
 
   /* ---------- reel choreography ---------- */
   const wUi = document.getElementById('wUi'), wBar = document.getElementById('wBar');
+  ScrollTrigger.create({ trigger: '#hero', start: 'top top', end: '+=90%', pin: true, refreshPriority: 2 });
   const pin = ScrollTrigger.create({
-    trigger: '#work', start: 'top top', end: () => '+=' + (N - 1) * innerHeight * .72, pin: true, anticipatePin: 1,
+    trigger: '#work', start: 'top top', end: () => '+=' + (N - 1) * innerHeight * .72, pin: true, anticipatePin: 1, refreshPriority: 1,
     onUpdate: s => { reel.state.active = s.progress; wBar.style.transform = `scaleX(${s.progress})`; }
-  });
-  ScrollTrigger.create({
-    trigger: '#work', start: 'top bottom', end: 'top top',
-    onUpdate: s => { reel.state.mix = s.progress; }, onLeaveBack: () => reel.state.mix = 0, onLeave: () => reel.state.mix = 1
   });
   navState();
 
@@ -2138,11 +2217,21 @@ function start() {
   };
   if (lenis) lenis.on('scroll', () => { clearTimeout(idle); idle = setTimeout(settle, 220); });
 
+  const heroFade = document.querySelectorAll('.hero-foot > *'), nowName = document.getElementById('nowName'), nowCn = document.getElementById('nowCn');
+  let nowIdx = -1;
   gsap.ticker.add(() => {
+    reel.state.mix = clamp(scrollY / Math.max(1, pin.start), 0, 1);
+    const fade = 1 - clamp(reel.state.mix / .1, 0, 1);
+    heroFade.forEach(el => { el.style.opacity = fade; });
+    const ni = reel.inLetters;
+    if (ni >= 0 && ni !== nowIdx && reel.state.mix < .05) {
+      nowIdx = ni; nowName.textContent = P[ni].name; nowCn.textContent = P[ni].cn;
+      gsap.fromTo([nowName, nowCn], { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: .5, stagger: .05, ease: 'expo.out', overwrite: true });
+    }
     const exitPx = Math.max(0, scrollY - pin.end);
     reel.state.exit = exitPx;
     reel.state.alpha = clamp(1 - exitPx / (innerHeight * .9), 0, 1);
-    const m = clamp((reel.state.mix - .2) / .65, 0, 1);
+    const m = clamp((reel.state.mix - .48) / .36, 0, 1);
     weather(m * m * (3 - 2 * m) * clamp(1 - exitPx / (innerHeight * .7), 0, 1));
     wUi.style.opacity = clamp((reel.state.mix - .75) * 4, 0, 1) * reel.state.alpha;
     wUi.style.visibility = wUi.style.opacity > 0.02 ? 'visible' : 'hidden';
@@ -2168,7 +2257,7 @@ function start() {
   }
   openFromHash();
 
-  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { reel.resize(); ScrollTrigger.refresh(); }, 150); });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { reel.resize(); reel.buildMask(); ScrollTrigger.refresh(); }, 150); });
   ScrollTrigger.refresh();
 }
 })();
