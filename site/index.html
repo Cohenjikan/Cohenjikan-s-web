@@ -81,9 +81,9 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 .hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-rows:minmax(0,1fr) auto;padding-block:calc(env(safe-area-inset-top,0px) + 76px) 26px}
 .hero .word{margin:0;align-self:center;justify-self:center;font-family:var(--f-display);font-weight:800;font-size:20vw;line-height:1;letter-spacing:-.065em;white-space:nowrap;color:var(--fg)}
 .gl-on .hero .word{color:transparent}
-/* Sharks under the name (ascii-sharks, MIT): rendered dark, inverted to greyscale and faded so they read as a watermark on the fog. */
-.hero-sea{position:absolute;inset:0;z-index:-1;width:100%;height:100%;display:block;pointer-events:none;font-family:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
-  filter:invert(1) grayscale(1);mix-blend-mode:multiply;opacity:.2;
+/* Sharks under the name (ascii-sharks, MIT) in mono mode: crisp glyphs in one ink on a transparent canvas,
+   faded right down so they read as a tone-on-tone texture, the way Cloudflare's hatched globe does. */
+.hero-sea{position:absolute;inset:0;z-index:-1;width:100%;height:100%;display:block;pointer-events:none;font-family:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;opacity:.22;
   -webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 48%,#000 35%,transparent 100%);mask-image:radial-gradient(ellipse 75% 70% at 50% 48%,#000 35%,transparent 100%)}
 .hero-foot{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:24px;align-items:end}
 .hero-foot p{margin:0}
@@ -438,8 +438,8 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-<script src="/sharks.js"></script>
-<script>try { new OceanEngine(document.getElementById('ocean')); } catch (e) {}</script>
+<script src="/sharks.js?v=3"></script>
+<script>try { new OceanEngine(document.getElementById('ocean'), undefined, [0x13, 0x12, 0x18]); } catch (e) {}</script>
 <script>
 (() => {
 "use strict";
