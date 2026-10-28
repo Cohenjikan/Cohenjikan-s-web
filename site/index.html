@@ -49,10 +49,10 @@ button{font:inherit;color:inherit}
 .pad{padding-inline:var(--gutter)}
 .label{font-family:var(--f-body);font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin:0}
 
-#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+#gl{position:fixed;left:0;top:0;width:100%;height:100%;height:100lvh;z-index:0;pointer-events:none;display:block}   /* lvh: the address bar never resizes it */
 main{position:relative}   /* no z-index: the hero name blends with the canvas below */
 .sw{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
-.si{display:inline-block;will-change:transform}
+.si{display:inline-block}
 
 /* loader */
 .loader{position:fixed;inset:0;z-index:90;background:var(--fog);color:var(--ink);display:grid;place-items:center;clip-path:inset(0 0 0 0)}
@@ -284,7 +284,8 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 /* film grain: one noise tile over everything, stepped around so it shimmers */
 .grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:75;pointer-events:none;opacity:.11;mix-blend-mode:overlay;background-size:160px 160px;animation:grain 1.2s steps(6) infinite}
 @keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-5%)}60%{transform:translate(-6%,-2%)}80%{transform:translate(5%,4%)}100%{transform:translate(0,0)}}
-@media (prefers-reduced-motion:reduce),(pointer:coarse){.grain{animation:none}}   /* keep weak phone GPUs from re-blending it every frame */
+@media (prefers-reduced-motion:reduce){.grain{animation:none}}
+@media (pointer:coarse){.grain{display:none}}   /* a full-screen blend over WebGL is too much for phone GPUs */
 
 /* case pages: the next cover morphs into the hero (View Transitions) */
 ::view-transition-group(case-cover){animation-duration:.95s;animation-timing-function:cubic-bezier(.7,0,.2,1)}
@@ -461,13 +462,14 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script src="/sharks.js?v=3"></script>
-<script>try { new OceanEngine(document.getElementById('ocean'), undefined, [0x13, 0x12, 0x18]); } catch (e) {}</script>
+<script>try { window.__sea = new OceanEngine(document.getElementById('ocean'), undefined, [0x13, 0x12, 0x18]); } catch (e) {}</script>
 <script>
 (() => {
 "use strict";
 const root = document.documentElement;
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINE = matchMedia('(pointer: fine)').matches;
+const COARSE = matchMedia('(pointer: coarse)').matches;   // phones and tablets: lighter rendering, no touch hover
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -1705,9 +1707,9 @@ function createReel(onProgress) {
   if (!window.THREE) return null;
   const canvas = document.getElementById('gl');
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return null; }
+  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !COARSE, powerPreference: 'high-performance' }); } catch (e) { return null; }
   if (!renderer.getContext()) return null;
-  const DPR = Math.min(devicePixelRatio || 1, 2);
+  const DPR = Math.min(devicePixelRatio || 1, COARSE ? 1.5 : 2);
   renderer.setPixelRatio(DPR); renderer.setClearColor(0, 0);
   const scene = new THREE.Scene();
   // flat world in CSS pixels: origin at the viewport centre, y up
@@ -1848,7 +1850,7 @@ function createReel(onProgress) {
 
   const L = {};
   function resize() {
-    vw = innerWidth; vh = innerHeight;
+    vw = innerWidth; vh = canvas.clientHeight || innerHeight;
     renderer.setSize(vw, vh, false);
     const db = renderer.getDrawingBufferSize(new THREE.Vector2());
     shared.uRes.value.copy(db);
@@ -1861,15 +1863,22 @@ function createReel(onProgress) {
   }
   resize();
 
-  const mouse = { x: -1e4, y: -1e4, nx: 0, sx: 0 };
-  addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; }, { passive: true });
+  const mouse = { x: -1e4, y: -1e4, nx: 0, sx: 0, touch: false, t: 0 };
+  addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; mouse.touch = false; mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; }, { passive: true });
+  addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; clearTimeout(mouse.t); mouse.touch = true; mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+  const lift = e => { if (e.pointerType === 'mouse') return; clearTimeout(mouse.t); mouse.t = setTimeout(() => { mouse.x = mouse.y = -1e4; }, e.type === 'pointercancel' ? 0 : 400); };   // the tap's click lands first
+  addEventListener('pointerup', lift, { passive: true }); addEventListener('pointercancel', lift, { passive: true });
 
-  const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false, vel: 0 };
+  const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false, vel: 0, covered: false };
   let T = 0, aSmooth = 0, hovered = -1, snap = false, offset = 0, drift = 0, inLetters = 0;
   const smooth01 = t => t * t * (3 - 2 * t);
 
+  let drawnA = 1;
   function frame(dt) {
     T += dt;
+    if (canvas.clientHeight && canvas.clientHeight !== vh) resize();   // resize right before drawing, so no frame shows a cleared canvas
+    if (state.covered || (state.alpha === 0 && drawnA === 0)) { hovered = -1; return; }
+    drawnA = state.alpha;
     mouse.sx = lerp(mouse.sx, mouse.nx, .05);
     const mx = clamp(state.mix, 0, 1);
     const aT = state.active * (N - 1), af = Math.min(N - 2, Math.floor(aT)), fr = clamp(aT - af, 0, 1);
@@ -1940,7 +1949,7 @@ function createReel(onProgress) {
     });
     hovered = hit; inLetters = under;
     planes.forEach((p, i) => {
-      p.hover = lerp(p.hover, i === hit ? 1 : 0, .1); p.u.uHover.value = REDUCE ? 0 : p.hover * (mx < .05 ? .6 : 1);
+      p.hover = lerp(p.hover, i === hit && !mouse.touch ? 1 : 0, .1); p.u.uHover.value = REDUCE ? 0 : p.hover * (mx < .05 ? .6 : 1);
       if (i === hit) p.u.uMouse.value.set(clamp((mouse.x - (p.cx - p.hw)) / (2 * p.hw), 0, 1), clamp(1 - (mouse.y - (p.cy - p.hh)) / (2 * p.hh), 0, 1));
     });
     // in the band each cover sits on the one to its left; during the dive plane 0 stays on top
@@ -1950,7 +1959,15 @@ function createReel(onProgress) {
     renderer.render(scene, camera);
   }
   const rectOf = i => { const p = planes[i]; return { x: p.cx - p.hw, y: p.cy - p.hh, w: p.hw * 2, h: p.hh * 2 }; };
-  return { frame, resize, buildMask, state, rectOf, snap: () => { snap = true; },
+  // same test as the hover pass, at any point: a tap's click can arrive before a frame has seen the finger
+  const hitAt = (x, y) => {
+    if (state.frozen || state.alpha <= .5 || state.covered) return -1;
+    const r = word.getBoundingClientRect(), letters = clamp(state.mix, 0, 1) < .05;
+    let h = -1;
+    planes.forEach((p, i) => { if (Math.abs(x - p.cx) < p.hw && Math.abs(y - p.cy) < p.hh && p.u.uAlpha.value > .3 && (!letters || maskAt(x - r.left, y - r.top) > .5)) h = i; });
+    return h;
+  };
+  return { frame, resize, buildMask, state, rectOf, hitAt, snap: () => { snap = true; },
     get hovered() { return hovered; }, get activeIndex() { return clamp(Math.round(aSmooth), 0, N - 1); }, get inLetters() { return inLetters; } };
 }
 
@@ -1965,6 +1982,7 @@ const onTex = (n, total) => { texDone = n; targetPct = Math.max(targetPct, 10 + 
 
 if (!window.gsap) { clearInterval(counter); loaderEl.remove(); root.classList.add('no-gl'); return; }
 gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true });
 const SCRAMBLE = !!window.ScrambleTextPlugin && !REDUCE;
 if (SCRAMBLE) gsap.registerPlugin(ScrambleTextPlugin);
 
@@ -2122,7 +2140,7 @@ function start() {
     tip.classList.remove('on'); root.style.cursor = '';
     const fr = caseHero.getBoundingClientRect();
     const r = reel && reel.state.mix > .5 ? reel.rectOf(i) : null;
-    const t = gsap.timeline({ onComplete: () => { busy = false; document.getElementById('caseClose').focus({ preventScroll: true }); } });
+    const t = gsap.timeline({ onComplete: () => { busy = false; if (reel) reel.state.covered = true; document.getElementById('caseClose').focus({ preventScroll: true }); } });
     t.to(caseBg, { opacity: 1, duration: REDUCE ? .01 : .7, ease: 'power2.out' }, 0);
     if (r && r.w > 20 && !REDUCE) {
       reel.state.hide = i;
@@ -2161,6 +2179,7 @@ function start() {
   }
   function closeCase(after) {
     if (!caseOpen || busy) return; busy = true;
+    if (reel) reel.state.covered = false;
     const i = caseIdx, fr = caseHero.getBoundingClientRect();
     const r = reel && reel.state.mix > .5 ? reel.rectOf(i) : null;
     const t = gsap.timeline({ onComplete: () => {
@@ -2258,7 +2277,7 @@ function start() {
 
   /* ---------- reel choreography ---------- */
   const wUi = document.getElementById('wUi'), wBar = document.getElementById('wBar');
-  ScrollTrigger.create({ trigger: '#hero', start: 'top top', end: '+=90%', pin: true, refreshPriority: 2 });
+  ScrollTrigger.create({ trigger: '#hero', start: 'top top', end: '+=90%', pin: true, anticipatePin: 1, refreshPriority: 2 });
   const pin = ScrollTrigger.create({
     trigger: '#work', start: 'top top', end: () => '+=' + (N - 1) * innerHeight * .72, pin: true, anticipatePin: 1, refreshPriority: 1,
     onUpdate: s => { reel.state.active = s.progress; wBar.style.transform = `scaleX(${s.progress})`; }
@@ -2310,11 +2329,11 @@ function start() {
   if (lenis) lenis.on('scroll', () => { clearTimeout(idle); idle = setTimeout(settle, 220); });
 
   const heroFade = document.querySelectorAll('.hero-foot > *'), nowName = document.getElementById('nowName'), nowCn = document.getElementById('nowCn');
-  let nowIdx = -1;
+  let nowIdx = -1, lastFade = -1, lastUi = -1;
   gsap.ticker.add(() => {
     reel.state.mix = clamp(scrollY / Math.max(1, pin.start), 0, 1);
     const fade = 1 - clamp(reel.state.mix / .1, 0, 1);
-    heroFade.forEach(el => { el.style.opacity = fade; });
+    if (fade !== lastFade) { lastFade = fade; heroFade.forEach(el => { el.style.opacity = fade; }); }
     const ni = reel.inLetters;
     if (ni >= 0 && ni !== nowIdx && reel.state.mix < .05) {
       nowIdx = ni; nowCn.textContent = P[ni].cn;
@@ -2327,15 +2346,15 @@ function start() {
     reel.state.alpha = clamp(1 - exitPx / (innerHeight * .9), 0, 1);
     const m = clamp((reel.state.mix - .48) / .36, 0, 1);
     weather(m * m * (3 - 2 * m) * clamp(1 - exitPx / (innerHeight * .7), 0, 1));
-    wUi.style.opacity = clamp((reel.state.mix - .75) * 4, 0, 1) * reel.state.alpha;
-    wUi.style.visibility = wUi.style.opacity > 0.02 ? 'visible' : 'hidden';
+    const ui = clamp((reel.state.mix - .75) * 4, 0, 1) * reel.state.alpha;
+    if (ui !== lastUi) { lastUi = ui; wUi.style.opacity = ui; wUi.style.visibility = ui > .02 ? 'visible' : 'hidden'; }
     if (!caseOpen) setActive(reel.state.mix > .7 ? reel.activeIndex : 0);
   });
 
   /* clicking a plane: in the ring it jumps to that project; the centred reel cover opens its case page */
   addEventListener('click', e => {
     if (caseOpen || e.target.closest('a,button,.case')) return;
-    const h = reel.hovered; if (h < 0) return;
+    const h = reel.hitAt(e.clientX, e.clientY); if (h < 0) return;
     if (reel.state.mix > .5 && h === reel.activeIndex) openCase(h);
     else goTo(h);
   });
@@ -2351,7 +2370,15 @@ function start() {
   }
   openFromHash();
 
-  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { reel.resize(); reel.buildMask(); ScrollTrigger.refresh(); }, 150); });
+  let rt, lastW = innerWidth;
+  addEventListener('resize', () => {
+    if (COARSE && innerWidth === lastW) return;
+    clearTimeout(rt); rt = setTimeout(() => { lastW = innerWidth; reel.resize(); reel.buildMask(); ScrollTrigger.refresh(); }, 150);
+  });
+
+  /* phones draw the sharks at half rate; the simulation still steps at 60 */
+  const sea = window.__sea;
+  if (COARSE && sea && sea.renderer) { const draw = sea.renderer.render.bind(sea.renderer); let odd = 0; sea.renderer.render = (w, d) => { if ((odd ^= 1)) draw(w, d * 2); }; }
   ScrollTrigger.refresh();
 }
 })();

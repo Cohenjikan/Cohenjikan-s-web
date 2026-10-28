@@ -877,3 +877,45 @@ README:
 - Under SwiftShader (software GL) the new build's case close stalls ~2s in the
   compositor (main thread idle; the old build does not). On the hardware GPU old and
   new both close in ~1.05s, so this is treated as a SwiftShader artefact.
+
+---
+
+## 2026-10-28 Phone Pass: Hero Flicker and Scroll Smoothness
+
+### Problem
+- On phones the hero name stuttered and flashed while swiping.
+
+### Causes found
+- Address bar show/hide fires `resize`; the handler rebuilt the renderer size, the
+  mask (chamfer pass) and called `ScrollTrigger.refresh()`. That cleared the canvas
+  for a frame (the letters are transparent text over WebGL, so the name blinked) and
+  cost 200 to 360 ms frames.
+- Touch counted as hover: the last finger point kept "hovering" whichever cover drifted
+  under it, so covers flipped between sharp and blurred inside the letters.
+- Taps on covers were unreliable on touch (pre-existing): the click used `reel.hovered`
+  from the last frame, and a tap fires no pointermove, so it often missed.
+
+### Changes
+- `#gl` is `100lvh` tall; the reel's world height follows `canvas.clientHeight`, and
+  `frame()` resizes right before drawing if that height ever changes (no cleared frame).
+- Resize on coarse pointers only rebuilds when the width changes;
+  `ScrollTrigger.config({ ignoreMobileResize: true })`.
+- Reel pointer: mouse moves drive hover; touch only aims taps (`pointerdown`), never
+  sharpens covers; the point clears on `pointercancel` (a swipe) or 400 ms after `pointerup`.
+- `reel.hitAt(x, y)` runs the hover hit test at the click point; the plane click uses it.
+- Phones: no MSAA, pixel ratio capped at 1.5, no grain layer, sharks drawn at half
+  rate (`window.__sea` renderer wrapped; the simulation still steps at 60).
+- The reel skips drawing while the case page fully covers it (`state.covered`) and
+  once it has faded out after the reel.
+- `.si` lost its permanent `will-change` (dozens of layers); per-frame opacity writes
+  for the hero foot and reel UI only happen when the value changes; hero pin has
+  `anticipatePin`.
+
+### Verification
+- Puppeteer, phone emulation (390x844 @3x, touch, CPU throttled 4x), touch scroll
+  gestures plus a simulated address-bar resize, old vs new alternated three times:
+  frames in the same run 213-234 → 342-390, worst frame 255-364 ms → 85-103 ms,
+  ScrollTrigger refreshes 2 → 0. Remaining long frames come from the emulator
+  changing lvh, which a real address bar does not.
+- Touch: tapping a letter scrolls to that project; tapping the centred cover opens its
+  case page (both fail on the previous build). Desktop regression run clean.
