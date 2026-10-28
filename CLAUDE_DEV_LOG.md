@@ -874,6 +874,6 @@ README:
 - Headless Edge (puppeteer-core) on the real GPU: no console errors; scramble,
   weights, velocity split, case open, Next via the card and via the bar, Escape close,
   and 390px width (no horizontal overflow) checked.
-- With SwiftShader the case close stalls ~2s in the compositor for both old and new
-  builds' heavier frames; on the hardware GPU old and new both close in ~1.05s.
-  Treat SwiftShader timings as a tooling artefact.
+- Under SwiftShader (software GL) the new build's case close stalls ~2s in the
+  compositor (main thread idle; the old build does not). On the hardware GPU old and
+  new both close in ~1.05s, so this is treated as a SwiftShader artefact.
