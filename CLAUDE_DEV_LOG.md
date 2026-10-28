@@ -841,3 +841,39 @@ README:
   `scrollY / pin.start` instead of a separate ScrollTrigger.
 - The reel's velocity arch (a 3D bend) was removed.
 
+
+---
+
+## 2026-10-28 Motion Polish: Grain, Velocity, Scramble, View Transitions
+
+### Goal
+- Make the site feel more premium without adding sections or visual noise.
+
+### Major Changes
+- GSAP 3.12.5 to 3.13.0 (all plugins are free since 3.13); ScrambleTextPlugin added.
+- Film grain: one 160px noise tile generated on a canvas at boot, on a fixed
+  `.grain` layer (overlay blend, opacity .11) that steps around with CSS. It is
+  static under reduced motion and on coarse pointers (to spare weak phone GPUs).
+- Reel shader: `uVel` (Lenis velocity, smoothed, clamped to ±1) pulls the R and B
+  channels apart along the motion; the reel covers also shrink up to 8% while it
+  moves fast. Both settle back to zero when scrolling stops.
+- ScrambleText: nav links, the GitHub pill and the contact link names decode on hover
+  (`[data-scramble]`); the hero "Now showing" name and the reel counter scramble
+  when they change.
+- Variable weight: chars of "Side projects" and "Say hello." go from 500 to 800 as
+  the pointer gets close (Funnel Display wght axis). Rects are read before any write.
+- Case pages: "Next project" (the card at the bottom, or the top-bar Next when the
+  hero is on screen) uses `document.startViewTransition`; the cover morphs into the
+  next hero (`view-transition-name: case-cover`) and the rest crossfades. Falls back
+  to the old GSAP fade when unsupported or under reduced motion.
+- CSS scroll-driven animations (inside `@supports (animation-timeline:scroll())`):
+  a reading-progress line under the case bar, and gallery figures rise in with `view()`.
+- Accent goes to `oklch(.58 .27 281)` on P3 screens.
+
+### Verification
+- Headless Edge (puppeteer-core) on the real GPU: no console errors; scramble,
+  weights, velocity split, case open, Next via the card and via the bar, Escape close,
+  and 390px width (no horizontal overflow) checked.
+- With SwiftShader the case close stalls ~2s in the compositor for both old and new
+  builds' heavier frames; on the hardware GPU old and new both close in ~1.05s.
+  Treat SwiftShader timings as a tooling artefact.

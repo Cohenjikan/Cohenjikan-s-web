@@ -277,6 +277,26 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
   .case-next{grid-template-columns:minmax(0,1fr);padding:18px}
 }
 @media (prefers-reduced-motion:reduce){.scroll-hint i,.row .s i{animation:none}}
+
+/* the accent, pushed into P3 on screens that can show it */
+@supports (color:oklch(0 0 0)){@media (color-gamut:p3){:root{--violet:oklch(.58 .27 281)}}}
+
+/* film grain: one noise tile over everything, stepped around so it shimmers */
+.grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:75;pointer-events:none;opacity:.11;mix-blend-mode:overlay;background-size:160px 160px;animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-5%)}60%{transform:translate(-6%,-2%)}80%{transform:translate(5%,4%)}100%{transform:translate(0,0)}}
+@media (prefers-reduced-motion:reduce),(pointer:coarse){.grain{animation:none}}   /* keep weak phone GPUs from re-blending it every frame */
+
+/* case pages: the next cover morphs into the hero (View Transitions) */
+::view-transition-group(case-cover){animation-duration:.95s;animation-timing-function:cubic-bezier(.7,0,.2,1)}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.45s}
+
+/* case pages: reading progress and gallery reveals ride the scroll itself */
+@supports (animation-timeline:scroll()){@media (prefers-reduced-motion:no-preference){
+  .case-bar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--violet);transform-origin:left;transform:scaleX(0);animation:readbar linear both;animation-timeline:scroll(nearest block)}
+  .gallery figure{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 80%}
+}}
+@keyframes readbar{to{transform:scaleX(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(48px) scale(.96)}}
 </style>
 </head>
 <body>
@@ -289,15 +309,16 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
 
 <canvas id="gl" aria-hidden="true"></canvas>
 <div class="tip" id="tip" aria-hidden="true"></div>
+<div class="grain" id="grain" aria-hidden="true"></div>
 
 <header class="nav" id="nav">
   <a class="logo" href="#hero" data-to>Cohen<i></i></a>
   <ul>
-    <li><a href="#work" data-to>Work</a></li>
-    <li><a href="#about" data-to>About</a></li>
-    <li><a href="#contact" data-to>Contact</a></li>
+    <li><a href="#work" data-to data-scramble>Work</a></li>
+    <li><a href="#about" data-to data-scramble>About</a></li>
+    <li><a href="#contact" data-to data-scramble>Contact</a></li>
   </ul>
-  <a class="gh" href="https://github.com/Cohenjikan" target="_blank" rel="noopener">GitHub ↗</a>
+  <a class="gh" href="https://github.com/Cohenjikan" target="_blank" rel="noopener" data-scramble>GitHub ↗</a>
 </header>
 
 <main>
@@ -408,11 +429,11 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
         </div>
       </div>
       <ul class="links">
-        <li><a href="https://github.com/Cohenjikan" target="_blank" rel="noopener">GitHub <b>@Cohenjikan</b><span>↗</span></a></li>
-        <li><a href="https://www.instagram.com/mk.cohen.3/" target="_blank" rel="noopener">Instagram <b>@mk.cohen.3</b><span>↗</span></a></li>
-        <li><a href="https://melboard.org/" target="_blank" rel="noopener">Melboard <b>melboard.org</b><span>↗</span></a></li>
-        <li><a href="https://louie1.com/" target="_blank" rel="noopener">Louie's homepage <b>louie1.com</b><span>↗</span></a></li>
-        <li><a href="https://brandyxue.com/" target="_blank" rel="noopener">Jimmy Xue's homepage <b>brandyxue.com</b><span>↗</span></a></li>
+        <li><a href="https://github.com/Cohenjikan" target="_blank" rel="noopener"><span data-scramble>GitHub</span> <b>@Cohenjikan</b><span>↗</span></a></li>
+        <li><a href="https://www.instagram.com/mk.cohen.3/" target="_blank" rel="noopener"><span data-scramble>Instagram</span> <b>@mk.cohen.3</b><span>↗</span></a></li>
+        <li><a href="https://melboard.org/" target="_blank" rel="noopener"><span data-scramble>Melboard</span> <b>melboard.org</b><span>↗</span></a></li>
+        <li><a href="https://louie1.com/" target="_blank" rel="noopener"><span data-scramble>Louie's homepage</span> <b>louie1.com</b><span>↗</span></a></li>
+        <li><a href="https://brandyxue.com/" target="_blank" rel="noopener"><span data-scramble>Jimmy Xue's homepage</span> <b>brandyxue.com</b><span>↗</span></a></li>
       </ul>
     </div>
     <footer class="foot"><span>© 2026 Cohen</span><span>Made with three.js and GSAP</span><a href="#hero" data-to>Back to top ↑</a></footer>
@@ -434,8 +455,9 @@ main{position:relative}   /* no z-index: the hero name blends with the canvas be
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrambleTextPlugin.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script src="/sharks.js?v=3"></script>
@@ -1707,7 +1729,7 @@ function createReel(onProgress) {
       gl_Position = projectionMatrix * viewMatrix * vec4(uRect.xy + position.xy * uRect.zw, 0., 1.);
     }`;
   const frag = `
-    uniform sampler2D uTex, uMask; uniform float uImgA, uPlaneA, uHover, uGray, uAlpha, uTime, uRadius, uReady, uMaskOn, uZoom, uDpr, uBlur, uFeather, uTone;
+    uniform sampler2D uTex, uMask; uniform float uImgA, uPlaneA, uHover, uGray, uAlpha, uTime, uRadius, uReady, uMaskOn, uZoom, uDpr, uBlur, uFeather, uTone, uVel;
     uniform vec2 uMouse, uWordC, uWordS, uFocal, uRes; uniform vec4 uRect;
     varying vec2 vUv;
     float rbox(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - r; }
@@ -1727,7 +1749,10 @@ function createReel(onProgress) {
         col += texture2D(uTex, tuv + vec2( o, -o * 1.4), uBlur).rgb + texture2D(uTex, tuv + vec2(-o, -o * 1.4), uBlur).rgb;
         col += texture2D(uTex, tuv + vec2(o * 1.8, 0.), uBlur).rgb + texture2D(uTex, tuv - vec2(o * 1.8, 0.), uBlur).rgb;
         col /= 8.;
-      } else col = texture2D(uTex, tuv).rgb;
+      } else {   // fast scrolling pulls the channels apart along the motion, like a lens catching up
+        vec2 sh = vec2(uVel * .007, 0.);
+        col = vec3(texture2D(uTex, tuv + sh).r, texture2D(uTex, tuv).g, texture2D(uTex, tuv - sh).b);
+      }
       col = mix(vec3(.09, .085, .11), col, uReady);
       // in the letters: lift and saturate the colour field so each project reads as its own light
       float lum = dot(col, vec3(.299, .587, .114));
@@ -1750,7 +1775,7 @@ function createReel(onProgress) {
     }`;
 
   const shared = {
-    uMask: { value: maskTex }, uMaskOn: { value: 1 }, uZoom: { value: 1 }, uDpr: { value: DPR },
+    uMask: { value: maskTex }, uMaskOn: { value: 1 }, uZoom: { value: 1 }, uDpr: { value: DPR }, uVel: { value: 0 },
     uWordC: { value: new THREE.Vector2() }, uWordS: { value: new THREE.Vector2(1, 1) }, uFocal: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(1, 1) }
   };
   const geo = new THREE.PlaneGeometry(1, 1);
@@ -1839,7 +1864,7 @@ function createReel(onProgress) {
   const mouse = { x: -1e4, y: -1e4, nx: 0, sx: 0 };
   addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.nx = e.clientX / vw * 2 - 1; }, { passive: true });
 
-  const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false };
+  const state = { mix: 0, active: 0, exit: 0, intro: 0, alpha: 1, hide: -1, frozen: false, vel: 0 };
   let T = 0, aSmooth = 0, hovered = -1, snap = false, offset = 0, drift = 0, inLetters = 0;
   const smooth01 = t => t * t * (3 - 2 * t);
 
@@ -1878,6 +1903,8 @@ function createReel(onProgress) {
     drift = lerp(drift, still ? 0 : 64, .04);
     offset += drift * dt;
     const off = lerp(offset, Math.round(offset / loop) * loop, settle) - (L.small ? 0 : mouse.sx * 70) * (1 - settle);
+    shared.uVel.value = REDUCE ? 0 : state.vel;
+    const shrink = 1 - .08 * Math.abs(state.vel) * zb;          // covers step back a little while the reel is moving fast
     const Gfit = Math.max(vw / bw, vh / bh) * 1.02;
     const zc = lerp(1, Gfit, zt);
     const c0x = Fwx, c0y = bandY;                              // plane 0 once settled
@@ -1894,7 +1921,7 @@ function createReel(onProgress) {
       const ay = Fwy + (y0 - Fwy) * zc + (0 - (Fwy + (c0y - Fwy) * zc)) * zt;
       const aw = bw * zc, ah = bh * zc;
       // reel position
-      const dist = Math.abs(i - aSmooth), near = clamp(dist, 0, 1), sc = 1 - .2 * near;
+      const dist = Math.abs(i - aSmooth), near = clamp(dist, 0, 1), sc = (1 - .2 * near) * shrink;
       const sw = p.planeA * L.sh * sc, shh = L.sh * sc, sx = p.sx0 - centre, sy = L.sy + state.exit;
       const X = lerp(ax, sx, zb), Y = lerp(ay, sy, zb), W = lerp(aw, sw, zb), H = lerp(ah, shh, zb);
       u.uRect.value.set(X, Y, W, H);
@@ -1938,6 +1965,18 @@ const onTex = (n, total) => { texDone = n; targetPct = Math.max(targetPct, 10 + 
 
 if (!window.gsap) { clearInterval(counter); loaderEl.remove(); root.classList.add('no-gl'); return; }
 gsap.registerPlugin(ScrollTrigger);
+const SCRAMBLE = !!window.ScrambleTextPlugin && !REDUCE;
+if (SCRAMBLE) gsap.registerPlugin(ScrambleTextPlugin);
+
+/* grain tile: grey noise drawn once, the CSS keeps it moving */
+try {
+  const g = document.createElement('canvas'); g.width = g.height = 160;
+  const gx = g.getContext('2d'), img = gx.createImageData(160, 160);
+  for (let k = 0; k < img.data.length; k += 4) { const v = Math.random() * 255 | 0; img.data[k] = img.data[k + 1] = img.data[k + 2] = v; img.data[k + 3] = 255; }
+  gx.putImageData(img, 0, 0);
+  document.getElementById('grain').style.backgroundImage = `url(${g.toDataURL()})`;
+} catch (e) { document.getElementById('grain').remove(); }
+
 const reel = createReel(onTex);
 if (!reel) root.classList.add('no-gl');
 
@@ -1952,7 +1991,10 @@ function start() {
   let lenis = null;
   if (window.Lenis && !REDUCE) { lenis = new Lenis({ lerp: .09, smoothWheel: true }); lenis.on('scroll', ScrollTrigger.update); window.__lenis = lenis; }
   gsap.ticker.lagSmoothing(0);
-  gsap.ticker.add((time, dms) => { if (lenis) lenis.raf(time * 1000); if (reel) reel.frame(Math.min(dms, 50) / 1000); });
+  gsap.ticker.add((time, dms) => {
+    if (lenis) lenis.raf(time * 1000);
+    if (reel) { reel.state.vel = lerp(reel.state.vel, lenis ? clamp(lenis.velocity / 45, -1, 1) : 0, .12); reel.frame(Math.min(dms, 50) / 1000); }
+  });
   const nativeTo = (y, instant) => window.scrollTo({ top: typeof y === 'number' ? y : y.getBoundingClientRect().top + scrollY, behavior: instant || REDUCE ? 'auto' : 'smooth' });
   const scrollTo = (y, d = 1.4) => lenis ? lenis.scrollTo(y, { duration: d, easing: t => 1 - Math.pow(1 - t, 4) }) : nativeTo(y);
   const jumpTo = y => lenis ? lenis.scrollTo(y, { immediate: true, force: true }) : nativeTo(y, true);
@@ -2091,8 +2133,24 @@ function start() {
     t.fromTo('.case-bar', { opacity: 0 }, { opacity: 1, duration: .6 }, .4);
     setHash('#' + P[i].id);
   }
-  function switchCase(i) {
+  function switchCase(i, card) {
     if (busy) return; busy = true;
+    if (document.startViewTransition && !REDUCE) {
+      // the cover you clicked (or the hero, if it is on screen) morphs into the next hero; the rest crossfades
+      const from = card ? card.querySelector('img') : caseHero, fr = from.getBoundingClientRect();
+      const morph = fr.bottom > 0 && fr.top < innerHeight;
+      if (morph) from.style.viewTransitionName = 'case-cover';
+      const vt = document.startViewTransition(() => {
+        from.style.viewTransitionName = '';
+        killCaseTriggers(); caseScroll.scrollTop = 0; fillCase(i);
+        if (morph) caseHero.style.viewTransitionName = 'case-cover';
+        if (reel) { jumpTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2); reel.snap(); }
+        setHash('#' + P[i].id);
+      });
+      vt.ready.then(() => gsap.fromTo(caseBody.querySelectorAll('[data-in]'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .9, stagger: .06, ease: 'expo.out', delay: .25, clearProps: 'transform' })).catch(() => {});
+      vt.finished.catch(() => {}).then(() => { caseHero.style.viewTransitionName = ''; busy = false; });
+      return;
+    }
     gsap.to([caseHero, caseBody], { opacity: 0, y: -30, duration: .35, ease: 'power2.in', onComplete: () => {
       killCaseTriggers(); caseScroll.scrollTop = 0; fillCase(i);
       if (reel) { jumpTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2); reel.snap(); }
@@ -2127,7 +2185,7 @@ function start() {
   }
   document.getElementById('caseClose').addEventListener('click', () => closeCase());
   document.getElementById('caseNextBtn').addEventListener('click', () => openCase((caseIdx + 1) % N));
-  caseBody.addEventListener('click', e => { const b = e.target.closest('[data-next]'); if (b) openCase(+b.dataset.next); });
+  caseBody.addEventListener('click', e => { const b = e.target.closest('[data-next]'); if (b && caseOpen) switchCase(+b.dataset.next, b); });
   addEventListener('keydown', e => {
     if (!caseOpen) return;
     if (e.key === 'Escape') closeCase();
@@ -2162,6 +2220,32 @@ function start() {
     });
   }
 
+  /* labels decode on hover */
+  if (SCRAMBLE && FINE) document.querySelectorAll('[data-scramble]').forEach(el => {
+    const text = el.textContent, host = el.closest('a,button') || el;
+    host.addEventListener('pointerenter', () => gsap.to(el, { duration: .6, ease: 'none', overwrite: true, scrambleText: { text, chars: 'lowerCase', speed: .7, revealDelay: .1 } }));
+  });
+
+  /* variable weight: letters near the pointer get heavier (Funnel Display runs 300 to 800) */
+  if (FINE && !REDUCE) {
+    const groups = [...document.querySelectorAll('.side-head h2, .c-big [data-chars]')].map(el => ({ el, parts: [...el._parts].map(s => ({ s, w: 500, last: 500 })) }));
+    let px = -1e4, py = -1e4;
+    addEventListener('pointermove', e => { px = e.clientX; py = e.clientY; }, { passive: true });
+    gsap.ticker.add(() => {
+      if (caseOpen) return;
+      groups.forEach(g => {
+        const r = g.el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > innerHeight) return;
+        const R = r.height * 1.5;
+        const t = g.parts.map(p => { const b = p.s.getBoundingClientRect(); return clamp(1 - Math.hypot(px - b.left - b.width / 2, py - b.top - b.height / 2) / R, 0, 1); });   // read everything, then write
+        g.parts.forEach((p, k) => {
+          p.w = lerp(p.w, 500 + 300 * t[k] * t[k] * (3 - 2 * t[k]), .14);
+          if (Math.abs(p.w - p.last) > .5) { p.last = p.w; p.s.style.fontWeight = Math.round(p.w); }
+        });
+      });
+    });
+  }
+
   /* magnetic buttons */
   if (FINE) document.addEventListener('pointermove', e => {
     const b = e.target.closest && e.target.closest('.btn,.nav .gh'); if (!b) return;
@@ -2192,7 +2276,6 @@ function start() {
     wDesc.textContent = p.desc;
     wTags.innerHTML = p.tags.map(t => `<span>${esc(t)}</span>`).join('');
     wLinks.innerHTML = `<button class="btn" type="button" data-case="${i}">Details</button>` + p.links.map(([l, h]) => `<a class="btn ghost" href="${h}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join('');
-    wNow.textContent = pad2(i + 1);
     wStars.textContent = starText(p);
     idxBtns.forEach((b, k) => b.classList.toggle('on', k === i));
   }
@@ -2200,6 +2283,8 @@ function start() {
   function setActive(i) {
     if (i === current) return;
     current = i;
+    if (SCRAMBLE) gsap.to(wNow, { duration: .6, ease: 'none', overwrite: true, scrambleText: { text: pad2(i + 1), chars: '0123456789' } });
+    else wNow.textContent = pad2(i + 1);
     gsap.killTweensOf([wCn, wDesc, wTags, wLinks]);
     gsap.killTweensOf(wTitle.querySelectorAll('.si'));
     gsap.to(wTitle.querySelectorAll('.si'), { yPercent: -105, duration: .3, stagger: .01, ease: 'power3.in' });
@@ -2210,7 +2295,7 @@ function start() {
       gsap.fromTo([wCn, wDesc, wTags, wLinks], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .7, stagger: .05, ease: 'expo.out' });
     } });
   }
-  fill(0); current = 0;
+  fill(0); current = 0; wNow.textContent = '01';
   const goTo = i => scrollTo(pin.start + (pin.end - pin.start) * (i / (N - 1)) + 2, 1.6);
   idxBtns.forEach(b => b.addEventListener('click', () => goTo(+b.dataset.i)));
 
@@ -2232,8 +2317,10 @@ function start() {
     heroFade.forEach(el => { el.style.opacity = fade; });
     const ni = reel.inLetters;
     if (ni >= 0 && ni !== nowIdx && reel.state.mix < .05) {
-      nowIdx = ni; nowName.textContent = P[ni].name; nowCn.textContent = P[ni].cn;
-      gsap.fromTo([nowName, nowCn], { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: .5, stagger: .05, ease: 'expo.out', overwrite: true });
+      nowIdx = ni; nowCn.textContent = P[ni].cn;
+      if (SCRAMBLE) gsap.to(nowName, { duration: .7, ease: 'none', overwrite: true, scrambleText: { text: P[ni].name, chars: 'lowerCase', speed: .8 } });
+      else nowName.textContent = P[ni].name;
+      gsap.fromTo(SCRAMBLE ? nowCn : [nowName, nowCn], { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: .5, stagger: .05, ease: 'expo.out', overwrite: true });
     }
     const exitPx = Math.max(0, scrollY - pin.end);
     reel.state.exit = exitPx;
